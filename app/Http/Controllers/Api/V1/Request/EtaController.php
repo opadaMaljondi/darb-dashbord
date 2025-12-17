@@ -626,20 +626,11 @@ class EtaController extends ApiController
             }
 
             
-           $drop_location = new Point(
-    (float) $drop_address['latitude'],
-    (float) $drop_address['longitude']
-);
+            $drop_location = new Point($drop_address['latitude'], $drop_address['longitude']);
 
-// Use whereContains instead of contains()
-$drop_zone = Zone::whereContains('coordinates', $drop_location)
-    ->whereHas('serviceLocation', function($query) {
-        $query->where('active', true);
-    })
-    ->where('active', 1)
-    ->where('id', $pick_zone->id)
-    ->first();
-    
+            $drop_zone = Zone::contains('coordinates', $drop_location)->whereHas('serviceLocation',function($query) {
+                $query->where('active',true);
+            })->where('active', 1)->where('id',$pick_zone->id)->first();
     
             return $this->respondSuccess(null,'Service Available');
             

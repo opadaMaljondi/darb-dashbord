@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1\Common;
 use App\Models\Admin\Faq;
 use App\Base\Constants\Auth\Role;
 use App\Transformers\Common\FaqTransformer;
-use MatanYadaev\EloquentSpatial\Objects\Point;
 use App\Http\Controllers\Api\V1\BaseController;
 
 /**
@@ -54,7 +53,7 @@ class FaqController extends BaseController
         $query = $this->faq->orderBy('created_at','DESC')->where(function($query)use($user_type){
             $query->where('user_type', $user_type)->orWhere('user_type', 'all');
         })->paginate($limit);
-        
+
         $result = fractal($query, new FaqTransformer);
 
         return $this->respondSuccess($result);
