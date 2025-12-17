@@ -206,8 +206,7 @@ class ZoneController extends Controller
         $results = get_user_locations(auth()->user());
         return response()->json(['results' => $results]);
     }
-
-    public function edit($id)
+  public function edit($id)
     {
         $zone = Zone::findOrFail($id);
         $googleMapKey = get_map_settings('google_map_key');
@@ -219,11 +218,17 @@ class ZoneController extends Controller
         foreach ($existingZones as $existingZone) {
             $multiPolygon = $existingZone->coordinates;
             if ($multiPolygon instanceof MultiPolygon) {
-                foreach ($multiPolygon->getPolygons() as $polygon) {
-                    foreach ($polygon->getLineStrings() as $lineString) {
+                // MultiPolygon is iterable, contains Polygons
+                foreach ($multiPolygon as $polygon) {
+                    // Polygon is iterable, contains LineStrings
+                    foreach ($polygon as $lineString) {
                         $polygonPoints = [];
-                        foreach ($lineString->getPoints() as $point) {
-                            $polygonPoints[] = ['lat' => $point->getLat(), 'lng' => $point->getLng()];
+                        // LineString is iterable, contains Points
+                        foreach ($lineString as $point) {
+                            $polygonPoints[] = [
+                                'lat' => $point->latitude,
+                                'lng' => $point->longitude
+                            ];
                         }
                         $existing_coordinates[] = $polygonPoints;
                     }
@@ -234,11 +239,11 @@ class ZoneController extends Controller
         // Convert zone coordinates to array format
         $zone_coordinates = [];
         if ($zone->coordinates instanceof MultiPolygon) {
-            foreach ($zone->coordinates->getPolygons() as $polygon) {
-                foreach ($polygon->getLineStrings() as $lineString) {
+            foreach ($zone->coordinates as $polygon) {
+                foreach ($polygon as $lineString) {
                     $points = [];
-                    foreach ($lineString->getPoints() as $point) {
-                        $points[] = [$point->getLng(), $point->getLat()];
+                    foreach ($lineString as $point) {
+                        $points[] = [$point->longitude, $point->latitude];
                     }
                     $zone_coordinates[] = $points;
                 }
@@ -388,6 +393,7 @@ class ZoneController extends Controller
 
         return response()->json(['zone' => $zone], 200);
     }
+
 
 
     public function destroy(Zone $zone)
