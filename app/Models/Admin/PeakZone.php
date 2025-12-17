@@ -7,10 +7,12 @@ use App\Models\User;
 use App\Base\Uuid\UuidModel;
 use App\Models\Traits\HasActive;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\HasActiveCompanyKey;
 use Nicolaslopezj\Searchable\SearchableTrait;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\MultiPolygon;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class PeakZone extends Model
 {
@@ -129,5 +131,17 @@ class PeakZone extends Model
             return Carbon::parse($this->end_time)->setTimezone($timezone)->format('h:i A');
         }
 
+        /**
+         * Scope a query to peak zones whose given spatial column contains the provided point.
+         *
+         * Mirrors the old Grimzy `contains` builder macro using MySQL ST_Contains.
+         */
+        public function scopeContains(Builder $query, string $column, Point $point): Builder
+        {
+            $table = $this->getTable();
+            $wktPoint = sprintf('POINT(%F %F)', $point->longitude, $point->latitude); // POINT(lng lat)
+
+            return $query->whereRaw("ST_Contains(`{$table}`.`{$column}`, ST_GeomFromText(?))", [$wktPoint]);
+        }
 
 }

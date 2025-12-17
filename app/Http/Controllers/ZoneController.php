@@ -134,22 +134,26 @@ class ZoneController extends Controller
             foreach ($coordinates as $key => $coordinate) {
 
                 // Check if the coordinate is an array with exactly two elements (lng, lat)
-                if (is_array($coordinate) && count($coordinate) === 2)
-                 {
+                if (is_array($coordinate) && count($coordinate) === 2) {
+                    $lat = $coordinate[1];
+                    $lng = $coordinate[0];
 
                     if ($key == 0) {
-                        $created_params['lat'] = $coordinate[1];
-                        $created_params['lng'] = $coordinate[0];
+                        $created_params['lat'] = $lat;
+                        $created_params['lng'] = $lng;
                     }
 
-                    $point = new Point($coordinate[1], $coordinate[0]); // Point(lat, lng)
+                    // Ensure this point is not already inside another zone using ST_Contains
+                    $wktPoint = sprintf('POINT(%F %F)', $lng, $lat); // POINT(lng lat)
+                    $exists = Zone::companyKey()
+                        ->whereRaw('ST_Contains(`coordinates`, ST_GeomFromText(?))', [$wktPoint])
+                        ->exists();
 
-                    $check_if_exists = Zone::companyKey()->contains('coordinates', $point)->exists();
-                    if ($check_if_exists) {
-                        throw ValidationException::withMessages(['zone_name' => __('Coordinates already exists with our exists zone')]);
+                    if ($exists) {
+                        throw ValidationException::withMessages(['zone_name' => __('Coordinates already exists in another zone')]);
                     }
 
-                    $points[] = $point;
+                    $points[] = new Point($lat, $lng);
                 } else {
                     throw ValidationException::withMessages(['coordinates' => __('Invalid coordinate data')]);
                 }
