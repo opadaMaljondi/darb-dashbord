@@ -43,7 +43,7 @@ class Handler extends ExceptionHandler
      * @return void
      */
     public function report(Throwable $exception)
-    {        
+    {
         $isDebugSendMailOpen = \Config::get('app.debug_sendmail_open');
         $debugSendMailEmail = \Config::get('app.debug_sendmail_email');
 
@@ -130,11 +130,19 @@ class Handler extends ExceptionHandler
                 'line' => $exception->getLine(),
                 'file' => $exception->getFile(),
                 'class' => get_class($exception),
-                'trace' => explode('\n', $exception->getTraceAsString()),
+                'trace' => explode("\n", $exception->getTraceAsString()),
             ];
         }
 
-        return response()->json($data, $statusCode);
+        // Sanitize data to avoid "Malformed UTF-8 characters" when encoding JSON
+        $data = $this->sanitizeForJson($data);
+
+        return response()->json(
+            $data,
+            $statusCode,
+            [],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR
+        );
     }
 
     /**
@@ -179,9 +187,42 @@ class Handler extends ExceptionHandler
      *
      * @return bool
      */
-    protected function runningInDebugMode()
+    protected function runningTimeMode()
     {
         return app_debug_enabled();
+    }
+
+    /**
+     * Recursively ensure all string values in the given data are valid UTF-8.
+     *
+     * @param  mixed  $data
+     * @return mixed
+     */
+    protected function sanitizeForJson($data)
+    {
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->sanitizeForJson($value);
+            }
+
+            return $data;
+        }
+
+        if (is_string($data) && function_exists('mb_check_encoding')) {
+            if (! mb_check_encoding($data, 'UTF-8')) {
+                // حاول تحويل السلسلة إلى UTF-8 مع دعم بعض الترميزات الشائعة
+                $converted = @mb_convert_encoding($data, 'UTF-8', 'UTF-8, ISO-8859-1, ISO-8859-6, Windows-1256');
+
+                if ($converted !== false) {
+                    return $converted;
+                }
+
+                // في حال الفشل، أزل البايتات غير الصالحة
+                return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+            }
+        }
+
+        return $data;
     }
 
     /**
