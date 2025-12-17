@@ -9,12 +9,13 @@ use App\Models\Traits\HasActive;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HasActiveCompanyKey;
 use Nicolaslopezj\Searchable\SearchableTrait;
-use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
+use MatanYadaev\EloquentSpatial\Objects\MultiPolygon;
 
 class Airport extends Model
 {
     use HasActive, UuidModel,SearchableTrait,HasActiveCompanyKey;
-    use SpatialTrait;
+    use HasSpatial;
 
     /**
      * The table associated with the model.
@@ -32,8 +33,8 @@ class Airport extends Model
         'service_location_id', 'name','active','coordinates','company_key','lat','lng','airport_surge_fee'
     ];
 
-    protected $spatialFields = [
-        'coordinates'
+    protected $casts = [
+        'coordinates' => MultiPolygon::class,
     ];
 
     /**
@@ -45,7 +46,7 @@ class Airport extends Model
         'admin'
     ];
 
-    
+
     public function serviceLocation()
     {
         return $this->belongsTo(ServiceLocation::class, 'service_location_id', 'id');

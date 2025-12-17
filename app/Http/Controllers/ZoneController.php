@@ -5,11 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Admin\Zone;
-use Grimzy\LaravelMysqlSpatial\Types\Point;
-use Grimzy\LaravelMysqlSpatial\Types\LineString;
-use Grimzy\LaravelMysqlSpatial\Types\Polygon;
+use MatanYadaev\EloquentSpatial\Objects\Point;
+use MatanYadaev\EloquentSpatial\Objects\LineString;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
 use Illuminate\Validation\ValidationException;
-use Grimzy\LaravelMysqlSpatial\Types\MultiPolygon;
 use Illuminate\Support\Facades\Log;
 use App\Base\Libraries\QueryFilter\QueryFilterContract;
 use App\Base\Filters\Admin\ZoneFilter;
@@ -28,12 +27,12 @@ class ZoneController extends Controller
         $validated = $request->validate([
             'enable_peak_zone_feature' => 'required|boolean',
         ]);
-    
+
         Setting::updateOrCreate(
             ['name' => 'enable_peak_zone_feature', 'category' => 'peak_zone_settings'],
             ['value' => $validated['enable_peak_zone_feature']]
         );
-    
+
         return response()->json(['success' => true]);
     }
     public function fetch(QueryFilterContract $queryFilter)
@@ -47,7 +46,7 @@ class ZoneController extends Controller
             'paginator' => $results,
         ]);
     }
-    public function create() 
+    public function create()
     {
         $googleMapKey =  get_map_settings('google_map_key'); // Retrieve the Google Map API key
         $settings = Setting::where('category', 'peak_zone_settings')->get()->pluck('value', 'name')->toArray();
@@ -61,7 +60,7 @@ class ZoneController extends Controller
         foreach ($existingZones as $zone) {
             $multiPolygon = $zone->coordinates;
 
-            if ($multiPolygon instanceof \Grimzy\LaravelMysqlSpatial\Types\MultiPolygon) {
+            if ($multiPolygon instanceof \MatanYadaev\EloquentSpatial\Objects\MultiPolygon) {
                 foreach ($multiPolygon as $polygon) {
                     foreach ($polygon as $lineString) {
                         $polygonPoints = [];
@@ -184,9 +183,9 @@ class ZoneController extends Controller
 
         return response()->json(['zone' => $zone], 201);
     }
-    
 
-    public function list() 
+
+    public function list()
     {
         $results = get_user_locations(auth()->user());
         return response()->json(['results' => $results]);
@@ -203,7 +202,7 @@ class ZoneController extends Controller
         foreach ($existingZones as $existingZone) {
             $multiPolygon = $existingZone->coordinates;
 
-            if ($multiPolygon instanceof \Grimzy\LaravelMysqlSpatial\Types\MultiPolygon) {
+            if ($multiPolygon instanceof \MatanYadaev\EloquentSpatial\Objects\MultiPolygon) {
                 foreach ($multiPolygon as $polygon) {
                     foreach ($polygon as $lineString) {
                         $polygonPoints = [];
@@ -249,7 +248,7 @@ class ZoneController extends Controller
                 }
 
 
-    } 
+    }
     public function update(Request $request, Zone $zone)
     {
         if(env('APP_FOR') == 'demo'){
@@ -275,7 +274,7 @@ class ZoneController extends Controller
 
         // Prepare updated parameters
         $updated_params['service_location_id'] = $request->service_location_id;
-        
+
         $set = [];
 
         if ($request->coordinates == null) {
@@ -359,7 +358,7 @@ class ZoneController extends Controller
         return response()->json([
             'successMessage' => 'Zone deleted successfully',
         ]);
-    }   
+    }
     public function updateStatus(Request $request)
     {
         if(env('APP_FOR') == 'demo'){
@@ -392,14 +391,14 @@ class ZoneController extends Controller
                         'zone' => $zone,
                     ]);
                  }else{
-           
+
                     return inertia('pages/zone/map', [
                         'zone' => $zone,
                         'googleMapKey' => $googleMapKey, // Pass the Google Map API key to the Vue component
-                    ]);         
+                    ]);
                  }
     }
-    
+
 }
 
 

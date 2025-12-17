@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\Admin\Complaint;
 use App\Base\Constants\Auth\Role;
 use App\Models\Admin\ComplaintTitle;
-use Grimzy\LaravelMysqlSpatial\Types\Point;
 use App\Http\Controllers\Api\V1\BaseController;
 use App\Base\Constants\Masters\ComplaintType;
 use App\Base\Filters\Admin\ComplaintTitleFilter;
@@ -36,12 +35,12 @@ class SupportTicketController extends BaseController
     {
         $this->imageUploader = $imageUploader;
         $this->multifile = $multifile;
-      
+
     }
-    
+
     // List Ticket titles
     //  @queryParam title_type string required title type for the title request
-    //  @response 
+    //  @response
     //  {
     //         "success": true,
     //         "message": "tikcket_titles_listed",
@@ -54,7 +53,7 @@ class SupportTicketController extends BaseController
     //             }
     //         ]
     //     }
-    
+
     public function index()
     {
         if (access()->hasRole(Role::USER)) {
@@ -80,7 +79,7 @@ class SupportTicketController extends BaseController
 
     //Ticket List
     public function tikcetList( Request $request)
-    {       
+    {
 
         $user = auth()->user();
 
@@ -139,7 +138,7 @@ class SupportTicketController extends BaseController
 
         $created_params['ticket_id'] = 'TIC_'.$current_timestamp;
 
-        
+
         $support_ticket = SupportTicket::create($created_params);
 
         // Store Multiple Files in MultiImages Table
@@ -147,7 +146,7 @@ class SupportTicketController extends BaseController
             foreach ($request->file('files') as $file) {
                 $filename = $this->imageUploader->file($file)->saveSupportImage();
                     SupportTicketMultiFile::create([
-                        'ticket_id' => $support_ticket->id, 
+                        'ticket_id' => $support_ticket->id,
                         'image_name' => $filename, // Store consistent filename
                     ]);
                 }
@@ -159,7 +158,7 @@ class SupportTicketController extends BaseController
             // reply message for support Ticket
 
             public function replyMessage(Request $request, SupportTicket $supportTicket)
-            { 
+            {
 
                 $validated = $request->validate([
                     'message' => 'required',
@@ -174,7 +173,7 @@ class SupportTicketController extends BaseController
                 $created_params['employee_id'] = $supportTicket->assign_to;
                 $created_params['sender_id'] = $senderId;
 
-            
+
                 $reply_ticket = SupportTicketMessage::create($created_params);
                 // dd($reply_ticket);
 
@@ -195,7 +194,7 @@ class SupportTicketController extends BaseController
                     ->orderBy('created_at', 'asc') // Ensure messages are sorted in ascending order
                     ->get();
                 $attachment = SupportTicketMultiFile::where('ticket_id', $supportTicket->id)->get();
-                // dd($attachment); 
+                // dd($attachment);
                 return response()->json(['supportTicket'=>$supportTicket,
                 'user' => $user,'reply_message'=>$reply_message,'attachment' => $attachment
                  ]);

@@ -28,7 +28,7 @@ use App\Transformers\Driver\CategoryTransformer;
 use Illuminate\Support\Facades\Log;
 use App\Models\Request\RecentSearch;
 use App\Transformers\Requests\RecentSearchesTransformer;
-use Grimzy\LaravelMysqlSpatial\Types\Point;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 use App\Models\Admin\Zone;
 use App\Jobs\Notifications\SendPushNotification;
 use App\Helpers\Rides\StoreEtaDetailForRideHelper;

@@ -24,12 +24,12 @@ use App\Models\Admin\SubscriptionDetail;
 use App\Models\Admin\ServiceLocation;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Notifications\Notifiable;
-use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use App\Models\Master\DriverPreference;
 
 class Driver extends Model
 {
-    use HasActive,SoftDeletes,SearchableTrait,HasActiveCompanyKey,Notifiable,SpatialTrait;
+    use HasActive,SoftDeletes,SearchableTrait,HasActiveCompanyKey,Notifiable,HasSpatial;
     /**
      * The table associated with the model.
      *
@@ -66,7 +66,7 @@ class Driver extends Model
     protected $spatialFields = [
         'route_coordinates',
     ];
- 
+
     /**
      * The relationships that can be loaded with query string filtering includes.
      *
@@ -106,7 +106,7 @@ class Driver extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id')->withTrashed();
-    } 
+    }
     public function routeNotificationForFcm()
     {
         return $this->user->fcm_token;
@@ -115,22 +115,22 @@ class Driver extends Model
     public function serviceLocation()
     {
         return $this->belongsTo(ServiceLocation::class, 'service_location_id', 'id')->withTrashed();
-    }     
+    }
     public function getProfilePictureAttribute($value)
     {
         if ($this->user && $this->user->profile_picture) {
-            $profilePictureUrl = $this->user->profile_picture;           
+            $profilePictureUrl = $this->user->profile_picture;
             // Replace 'uploads/user' with 'uploads/driver'
             $driverProfilePictureUrl = $profilePictureUrl;
             return $driverProfilePictureUrl;
         }
         return null;
     }
-      
+
     public function getServiceLocationNameAttribute()
     {
         if($this->serviceLocation()->exists()){
-            return $this->serviceLocation?$this->serviceLocation->name:null;            
+            return $this->serviceLocation?$this->serviceLocation->name:null;
         }else{
 
             return null;
@@ -168,7 +168,7 @@ class Driver extends Model
     public function getCarMakeNameAttribute()
     {
         if($this->carMake()->exists()){
-            return $this->carMake?$this->carMake->name:null;            
+            return $this->carMake?$this->carMake->name:null;
         }else{
 
             return $this->custom_make;
@@ -209,7 +209,7 @@ class Driver extends Model
     public function currentRide(){
 
         return $this->requestDetail()->where('is_completed',false)->where('is_cancelled',false)->exists();
-        
+
     }
     public function driverAvailabilities()
     {
@@ -341,7 +341,7 @@ class Driver extends Model
     public function requests()
     {
        return $this->belongsToMany(Request::class, 'request_drivers','driver_id','request_id');
-    } 
+    }
 
     public function enabledRoutes()
     {
@@ -368,7 +368,7 @@ class Driver extends Model
     {
         return $this->hasMany(RewardHistory::class, 'user_id', 'user_id');
     }
-    
+
     public function getMobileNumberAttribute() {
         return $this->user ? $this->user->mobile_number: $this->mobile;
     }
@@ -381,7 +381,7 @@ class Driver extends Model
     */
     public function getConvertedDeletedAtAttribute()
     {
-        
+
         $user=  User::where('id',$this->user_id)->first();
         return $user ? $user->converted_deleted_at: null;
     }
