@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HasActiveCompanyKey;
 use Nicolaslopezj\Searchable\SearchableTrait;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
-use MatanYadaev\EloquentSpatial\Objects\MultiPolygon;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class PeakZone extends Model
 {
@@ -32,8 +32,8 @@ class PeakZone extends Model
         'zone_id','name','active','coordinates','lat','lng','start_time','end_time','distance_price_percentage'
     ];
 
-    protected $casts = [
-        'coordinates' => MultiPolygon::class,
+    protected $spatialFields = [
+        'coordinates'
     ];
 
     protected $searchable = [
@@ -129,5 +129,5 @@ class PeakZone extends Model
             return Carbon::parse($this->end_time)->setTimezone($timezone)->format('h:i A');
         }
 
-
+   
 }

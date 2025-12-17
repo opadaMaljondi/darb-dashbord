@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Models\Admin\ServiceLocation;
 use App\Models\Admin\Incentive;
 use Illuminate\Validation\ValidationException;
+
 use Illuminate\Support\Facades\Log;
 use App\Base\Libraries\QueryFilter\QueryFilterContract;
 use App\Http\Controllers\Controller;
@@ -14,17 +15,17 @@ use App\Models\Admin\ZoneType;
 
 class IncentiveController extends Controller
 {
-
+   
     public function index(ZoneType $zoneType)
     {
         $dailyIncentives = Incentive::where('zone_type_id',$zoneType->id)->where('mode', 'daily')->orderBy('ride_count','ASC')->get();
         $weeklyIncentives = Incentive::where('zone_type_id',$zoneType->id)->where('mode', 'weekly')->orderBy('ride_count','ASC')->get();
-
+    
         return inertia('pages/incentive/index', ['dailyIncentives' => $dailyIncentives,
             'app_for'=>env("APP_FOR"),
             'weeklyIncentives' => $weeklyIncentives,
          'zone_type'=> $zoneType]);
-    }
+    } 
     public function update(Request $request)
     {
         // dd('rdxrdxcrd');
@@ -67,7 +68,7 @@ class IncentiveController extends Controller
     // Return a success message or redirect
     return back()->with('success', 'Incentives updated successfully.');
 
-    }
+    } 
 }
 
 

@@ -10,14 +10,18 @@ use App\Base\SMSTemplate\SMSTemplate;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use MatanYadaev\EloquentSpatial\Objects\Point;
+
 use App\Base\Constants\Auth\Role as RoleSlug;
 use App\Base\Services\Setting\SettingContract;
 use App\Helpers\Notification\AdminInformation;
 use App\Base\Services\Hash\HashGeneratorContract;
 use App\Base\Libraries\QueryFilter\FilterContract;
 use App\Base\Services\OTP\Generator\OTPGeneratorContract;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 use MatanYadaev\EloquentSpatial\Objects\LineString;
+use MatanYadaev\EloquentSpatial\Objects\Polygon;
+
 use App\Models\Admin\Zone;
 use App\Models\Admin\Setting;
 use App\Models\Languages;
@@ -1107,7 +1111,7 @@ if (! function_exists('get_line_string')) {
         }
         $points = [];
         foreach ($poly_points as $key => $point) {
-            $points[] = new Point($point[0], $point[1]);
+            $points[] = new Point((float)$point[0],(float) $point[1]);
         }
 
         return $poly_line_string = new LineString($points);
@@ -1121,8 +1125,8 @@ if (! function_exists('get_relational_custom_filters')) {
             $customFilter = [];
             $customFilter['value'] = $value;
             $customFilter['relational_name'] = $relational_name;
-            $customFilter['column_name'] = $column_name;
-            $customFilter['operator'] = $where;
+            $customFilter['column_name'] = $column_name; 
+            $customFilter['operator'] = $where;   
             return $customFilter;
      }
 }
@@ -1165,14 +1169,14 @@ if (! function_exists('get_directions')) {
         curl_close($ch);
 
         // Log::info($result);
-
+        
 
        $encoded_result = json_decode($result);
 
        if($encoded_result->status!="OK"){
 
            $error_message=$encoded_result->error_message;
-
+           
            return response()->json(['success'=>false,'message'=>$error_message.'Cannot able to get Polyline from Google Map Api']);
 
        }else{
@@ -1182,7 +1186,7 @@ if (! function_exists('get_directions')) {
 
 
           return response()->json(['success'=>true,'message'=>'success','points'=>$points]);
-
+ 
        }
 
     }
@@ -1228,11 +1232,15 @@ function get_directions_array($pickup_lat, $pickup_lng, $drop_lat, $drop_lng)
 if (!function_exists('find_peak_zone')) {
     function find_peak_zone($lat, $lng)
     {
-        $point = new Point($lat, $lng);
+        if (!is_numeric($lat) || !is_numeric($lng)) {
+            return null;
+        }
 
-        $zone = PeakZone::contains('coordinates', $point)->first();
+        $point = new Point((float) $lat, (float) $lng);
 
-        return $zone;
+        return PeakZone::query()
+            ->whereContains('coordinates', $point)
+            ->first();
     }
 }
 
@@ -1240,18 +1248,27 @@ if (!function_exists('find_peak_zone')) {
  * Custom helper functions.
  */
 
+
+
 if (!function_exists('find_zone')) {
     function find_zone($lat, $lng)
     {
-        $point = new Point($lat, $lng);
+        if (!is_numeric($lat) || !is_numeric($lng)) {
+            return null;
+        }
 
-        $zone = Zone::contains('coordinates', $point)->whereHas('serviceLocation',function($query) {
-            $query->where('active',true);
-        })->where('active', 1)->first();
+        $point = new Point((float) $lat, (float) $lng);
 
-        return $zone;
+        return Zone::query()
+            ->whereContains('coordinates', $point)
+            ->where('active', 1)
+            ->whereHas('serviceLocation', function ($query) {
+                $query->where('active', true);
+            })
+            ->first();
     }
 }
+
 
 /**
  * Custom helper functions.
@@ -1259,7 +1276,7 @@ if (!function_exists('find_zone')) {
 if (!function_exists('get_settings')) {
     function get_settings($key)
     {
-
+        
         // return null;
 
         return Setting::whereName($key)->pluck('value')->first();
@@ -1271,7 +1288,7 @@ if (!function_exists('get_payment_settings')) {
     {
         // dd($key);
         return ThirdPartySetting::where('module', 'payment')->whereName($key)->pluck('value')->first();
-
+        
     }
 }
 
@@ -1280,7 +1297,7 @@ if (!function_exists('get_map_settings')) {
     {
         // dd($key);
         return ThirdPartySetting::where('module', 'map')->whereName($key)->pluck('value')->first();
-
+        
     }
 }
 if (!function_exists('get_firebase_settings')) {
@@ -1288,7 +1305,7 @@ if (!function_exists('get_firebase_settings')) {
     {
         // dd($key);
         return ThirdPartySetting::where('module','firebase')->whereName($key)->pluck('value')->first();
-
+        
     }
 }
 
@@ -1296,14 +1313,14 @@ if (!function_exists('active_languages')) {
     function active_languages()
     {
         return Languages::where('active',true)->get();
-
+        
     }
 }
 
 if (!function_exists('find_airport')) {
     function find_airport($lat, $lng)
     {
-        $point = new Point($lat, $lng);
+        $point = new Point((float)$lat, (float)$lng);
 
         $zone = Airport::companyKey()->contains('coordinates', $point)->where('active', 1)->first();
 
@@ -1371,8 +1388,8 @@ if (! function_exists('get_directions')) {
         // Parameters for the API request
         $params = [
             'origin' => $pickup_lat.','.$pickup_lng,
-            'destination' => $drop_lat.','.$drop_lng,
-            'key' => get_settings('google_map_key_for_distance_matrix'),
+            'destination' => $drop_lat.','.$drop_lng, 
+            'key' => get_settings('google_map_key_for_distance_matrix'), 
         ];
 
         // Build the request URL
@@ -1397,9 +1414,9 @@ if (! function_exists('get_directions')) {
             $leg = $route['legs'][0];
 
             // Extract the distance and duration
-            $distance = $leg['distance']['value'];
+            $distance = $leg['distance']['value']; 
 
-            $duration = $leg['duration']['value'];
+            $duration = $leg['duration']['value'];  
 
             $distance_in_km = (float)number_format(($distance/1000),1);
             $distance_in_meters = ($distance);
@@ -1509,30 +1526,30 @@ if (!function_exists('default_language')) {
 }
 
 
-if(!function_exists('check_code_format'))
+if(!function_exists('check_code_format')) 
 {
     function check_code_format($code)
     {
-        if (!preg_match('/^([a-f0-9]{8})-(([a-f0-9]{4})-){3}([a-f0-9]{12})$/i', $code)) {
+        if (!preg_match('/^([a-f0-9]{8})-(([a-f0-9]{4})-){3}([a-f0-9]{12})$/i', $code)) { 
              $response = array("success"=>false, "message"=>"Invalid Purchase Code");
-             return $response;
-        }
+             return $response;     
+        } 
         else{
             $response = array("success"=>true);
-            return $response;
-        }
-    }
-}
+            return $response;     
+        } 
+    } 
+} 
 
 
-if(!function_exists('get_user_locations'))
+if(!function_exists('get_user_locations')) 
 {
     function get_user_locations($user)
     {
         if(!$user){
             return [];
         }
-
+        
         if($user->hasRole('super-admin')){
         if($user->admin()->exists()){
                 if($user->admin->serviceLocationDetail()->exists()){
@@ -1546,12 +1563,12 @@ if(!function_exists('get_user_locations'))
         }else{
            $service_location = ServiceLocation::where('active',true)->where('id',$user->admin->service_location_id)->get();
         }
-
+        
         return $service_location;
-    }
+    } 
 }
 
-if(!function_exists('get_user_location_ids'))
+if(!function_exists('get_user_location_ids')) 
 {
     function get_user_location_ids($user)
     {
@@ -1569,11 +1586,11 @@ if(!function_exists('get_user_location_ids'))
         }else{
             $service_location = [];
         }
-
+        
         return $service_location;
-    }
+    } 
 }
-if(!function_exists('decode_polyline'))
+if(!function_exists('decode_polyline')) 
 {
     function decode_polyline($polyline)
     {
@@ -1613,10 +1630,10 @@ if(!function_exists('decode_polyline'))
         }
 
         return $points;
-    }
+    } 
 }
 
-if(!function_exists('haversineDistance'))
+if(!function_exists('haversineDistance')) 
 {
     function haversineDistance($point1, $point2)
     {

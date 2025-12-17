@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HasActiveCompanyKey;
 use Nicolaslopezj\Searchable\SearchableTrait;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
-use MatanYadaev\EloquentSpatial\Objects\MultiPolygon;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 use App\Models\Admin\Subscription;
 use App\Models\Admin\ZoneTranslations;
 
@@ -40,9 +40,8 @@ class Zone extends Model
         'peak_zone_ride_count',
         'distance_price_percentage',
     ];
-
-    protected $casts = [
-        'coordinates' => MultiPolygon::class,
+    protected $spatialFields = [
+        'coordinates'
     ];
 
     /**
@@ -86,7 +85,7 @@ class Zone extends Model
     public function zoneType()
     {
         return $this->hasMany(ZoneType::class, 'zone_id', 'id')->orderBy('order_number');
-    }
+    } 
     /**
      * The Zone has many Types.
      * @tested
@@ -96,8 +95,8 @@ class Zone extends Model
     public function subscription()
     {
         return $this->hasMany(Subscription::class, 'zone_id', 'id');
-    }
-
+    } 
+   
 
     public function zoneTranslationWords()
     {

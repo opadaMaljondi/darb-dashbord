@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\HasActiveCompanyKey;
 use Nicolaslopezj\Searchable\SearchableTrait;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
-use MatanYadaev\EloquentSpatial\Objects\MultiPolygon;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class Airport extends Model
 {
@@ -33,8 +33,8 @@ class Airport extends Model
         'service_location_id', 'name','active','coordinates','company_key','lat','lng','airport_surge_fee'
     ];
 
-    protected $casts = [
-        'coordinates' => MultiPolygon::class,
+    protected $spatialFields = [
+        'coordinates'
     ];
 
     /**
@@ -46,7 +46,7 @@ class Airport extends Model
         'admin'
     ];
 
-
+    
     public function serviceLocation()
     {
         return $this->belongsTo(ServiceLocation::class, 'service_location_id', 'id');
