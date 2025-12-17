@@ -41,10 +41,11 @@ class Zone extends Model
         'distance_price_percentage',
     ];
 
-    protected $casts = [
-        'coordinates' => MultiPolygon::class,
-    ];
-
+  
+protected $casts = [
+    'coordinates' => MultiPolygon::class,
+    'active' => 'boolean',
+];
     /**
      * The relationships that can be loaded with query string filtering includes.
      *
