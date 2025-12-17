@@ -187,7 +187,7 @@ class Handler extends ExceptionHandler
      *
      * @return bool
      */
-    protected function runningTimeMode()
+    protected function runningInDebugMode()
     {
         return app_debug_enabled();
     }
