@@ -10,6 +10,8 @@ use MatanYadaev\EloquentSpatial\Objects\LineString;
 use MatanYadaev\EloquentSpatial\Objects\Polygon;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+
+use Illuminate\Support\Facades\DB;
 use App\Base\Libraries\QueryFilter\QueryFilterContract;
 use App\Base\Filters\Admin\ZoneFilter;
 use App\Models\Admin\Setting;
