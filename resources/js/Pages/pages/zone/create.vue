@@ -44,8 +44,8 @@
                                 <label for="select_unit" class="form-label">{{$t("select_unit")}}</label>
                                 <select id="select_unit" class="form-select" v-model="form.unit">
                                     <option disabled value="">{{$t("choose_unit")}}</option>
-                                    <option value="1">{{$t("kilo_meter")}}</option>
-                                    <option value="2">{{$t("miles")}}</option>
+                                    <option value=1>{{$t("kilo_meter")}}</option>
+                                    <option value=2>{{$t("miles")}}</option>
                                 </select>
                                 <span v-if="form.errors.unit" class="text-danger">{{ form.errors.unit }}</span>
                             </div>
@@ -54,7 +54,7 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <input type="number" step="any" class="form-control" :placeholder="$t('enter_maximum_distance')" id="maximum_distance" v-model.number="form.maximum_distance">
-                                <span v-if="form.errors.maximum_distance" class="text-danger">{{ form.errors.maximum_distance }}</span>
+                                <span v-if="form.errors.enter_maximum_distance" class="text-danger">{{ form.errors.enter_maximum_distance }}</span>
                             </div>
                             <div class="mb-3" v-if="enable_maximum_distance_feature">
                                 <label for="maximum_outstation_distance" class="form-label">{{$t("maximum_outstation_distance")}}
@@ -70,11 +70,11 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="number" step="any" :readonly="app_for === 'demo'" class="form-control"
+                                        <input type="number" :readonly="app_for === 'demo'" class="form-control"
                                         :placeholder="$t('enter_peak_zone_ride_count')" id="peak_zone_ride_count"
-                                        v-model.number="form.peak_zone_ride_count"/>
+                                        v-model="form.peak_zone_ride_count"/>
+                                        <span v-if="form.errors.peak_zone_ride_count" class="text-danger">{{ form.errors.peak_zone_ride_count }}</span>
                                     </div>
-                                    <span v-if="form.errors.peak_zone_ride_count" class="text-danger">{{ form.errors.peak_zone_ride_count }}</span>
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
@@ -83,22 +83,22 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                    <input type="number" step="any" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_radius')" id="peak_zone_radius"
-                                    v-model.number="form.peak_zone_radius"
+                                    <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_radius')" id="peak_zone_radius"
+                                    v-model="form.peak_zone_radius"
                                     />
-                                    </div>
                                     <span v-if="form.errors.peak_zone_radius" class="text-danger">{{ form.errors.peak_zone_radius }}</span>
+                                    </div>
                                 </div>
                                 </div>
-                            </div>
-                            <div class="row" v-if="enable_peak_zone_feature">
+                                </div>
+                                <div class="row" v-if="enable_peak_zone_feature">
                                 <div class="col-sm-6">
                                     <div class="mb-3">
                                     <label for="peak_zone_history_duration" class="form-label">{{$t("peak_zone_history_duration")}}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="number" step="any" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_history_duration')" id="peak_zone_history_duration"
-                                    v-model.number="form.peak_zone_history_duration"
+                                    <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_history_duration')" id="peak_zone_history_duration"
+                                    v-model="form.peak_zone_history_duration"
                                     />
                                     <span v-if="form.errors.peak_zone_history_duration" class="text-danger">{{ form.errors.peak_zone_history_duration }}</span>
                                     </div>
@@ -109,15 +109,15 @@
                                         <span class="text-danger">*</span>
                                         </label>
                                     <div class="input-group">
-                                    <input type="number" step="any" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_duration')" id="peak_zone_duration"
-                                    v-model.number="form.peak_zone_duration"
+                                    <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_duration')" id="peak_zone_duration"
+                                    v-model="form.peak_zone_duration"
                                     />
-                                    </div>
                                     <span v-if="form.errors.peak_zone_duration" class="text-danger">{{ form.errors.peak_zone_duration }}</span>
+                                    </div>
                                 </div>
                                 </div>
-                            </div>
-                            <div class="row" v-if="enable_peak_zone_feature">
+                                <div class="row" v-if="enable_peak_zone_feature">
+
                                 <div class="col-sm-6">
                                     <div class="mb-3">
                                     <label for="distance_price_percentage" class="form-label">{{$t("distance_price_percentage")}}
@@ -125,14 +125,15 @@
                                         <a href="" class="text-success" data-bs-toggle="modal" data-bs-target="#surge">{{$t("how_it_works")}}</a>
                                     </label>
                                     <div class="input-group">
-                                    <input type="number" step="any" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_distance_price_percentage')" id="distance_price_percentage"
-                                    v-model.number="form.distance_price_percentage"
+                                    <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_distance_price_percentage')" id="distance_price_percentage"
+                                    v-model="form.distance_price_percentage"
                                     />
-                                    </div>
                                     <span v-if="form.errors.distance_price_percentage" class="text-danger">{{ form.errors.distance_price_percentage }}</span>
+                                    </div>
                                 </div>
                                 </div>
-                            </div>
+                                </div>
+                                </div>
                             <div class="text-end">
                                 <button type="submit" class="btn btn-primary" >{{$t("save")}}</button>
                             </div>
@@ -242,10 +243,11 @@
 import { Head, useForm, router } from '@inertiajs/vue3';
 import Layout from "@/Layouts/main.vue";
 import PageHeader from "@/Components/page-header.vue";
-import { ref, onMounted } from "vue";
-import { useSharedState } from '@/composables/useSharedState';
+import { ref, onMounted,computed } from "vue";
+import { useSharedState } from '@/composables/useSharedState'; // Import the composable
 import axios from "axios";
 import { useI18n } from 'vue-i18n';
+import { polygon } from 'leaflet';
 
 export default {
     components: {
@@ -254,38 +256,30 @@ export default {
         Head,
     },
     props: {
-        googleMapKey: String,
+        googleMapKey: String, // Define the googleMapKey prop
         successMessage: String,
-        default_lat: String,
-        default_lng: String,
+        default_lat:String,
+        default_lng:String,
         alertMessage: String,
         existingZones: Array,
         enable_maximum_distance_feature: Boolean,
         settings: Object,
-        app_for: String,
     },
     setup(props) {
         const { googleMapKey } = props;
         const { t } = useI18n();
-        const { languages, fetchData } = useSharedState();
+        const { languages, fetchData } = useSharedState(); // Destructure the shared state
         const activeTab = ref('English');
         const enable_peak_zone_feature = ref(props.settings.enable_peak_zone_feature == 1);
-
-        // ✅ إضافة جميع الحقول المطلوبة
         const form = useForm({
             service_location_id: "",
-            languageFields: {},
+            languageFields:  {},
             unit: "",
             maximum_outstation_distance: props.enable_maximum_distance_feature ? '' : 0,
             maximum_distance: props.enable_maximum_distance_feature ? '' : 0,
-            // إضافة حقول Peak Zone
-            peak_zone_ride_count: enable_peak_zone_feature.value ? '' : 0,
-            peak_zone_radius: enable_peak_zone_feature.value ? '' : 0,
-            peak_zone_history_duration: enable_peak_zone_feature.value ? '' : 0,
-            peak_zone_duration: enable_peak_zone_feature.value ? '' : 0,
-            distance_price_percentage: enable_peak_zone_feature.value ? '' : 0,
-        });
 
+
+        });
         const successMessage = ref(props.successMessage || '');
         const alertMessage = ref(props.alertMessage || '');
         const serviceLocations = ref([]);
@@ -296,52 +290,52 @@ export default {
         const drawingManager = ref(null);
         const selectedPolygon = ref(null);
 
-        const handleInput = () => {
+        const handleInput = () =>{
+
             if (search.value.length < 3) {
                 suggestions.value = [];
-            } else {
+                }else{
                 setTimeout(() => {
                     fetchAutocompleteResults(search.value);
                 }, 300);
             }
         }
-
         const fetchAutocompleteResults = (search) => {
+
             const apiUrl = `https://places.googleapis.com/v1/places:autocomplete`;
-            const headers = {
-                "Content-Type": "application/json",
-                "X-Goog-Api-Key": props.googleMapKey,
-                "X-Goog-FieldMask": "suggestions.placePrediction.placeId,suggestions.placePrediction.place,suggestions.placePrediction.text",
-            };
-            const requestData = {
-                input: search,
-            };
+                const headers = {
+                    "Content-Type": "application/json",
+                    "X-Goog-Api-Key": props.googleMapKey,
+                    "X-Goog-FieldMask": "suggestions.placePrediction.placeId,suggestions.placePrediction.place,suggestions.placePrediction.text",
+                };
+                const requestData = {
+                    input: search,
+                };
 
-            fetch(apiUrl, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(requestData),
-            })
-            .then((response) => response.json())
-            .then((data) => {
-                if(data.suggestions?.length > 0) {
-                    suggestions.value = data.suggestions.filter(suggestion => suggestion.placePrediction).map(suggestion => ({
-                        placeId: suggestion.placePrediction.placeId,
-                        formattedAddress: suggestion.placePrediction.text.text,
-                    }));
-                }
-            })
-            .catch((error) => {
-                console.error("Error fetching autocomplete results:", error);
-            })
+                fetch(apiUrl, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(requestData),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if(data.suggestions?.length>0) {
+                            suggestions.value = data.suggestions.filter(suggestion => suggestion.placePrediction).map(suggestion => ({
+                                placeId: suggestion.placePrediction.placeId,
+                                formattedAddress: suggestion.placePrediction.text.text,
+                            }));
+                        }
+                    })
+                    .catch((error) => {
+                    console.error("Error fetching autocomplete results:", error);
+                    })
         }
-
         const selectSuggestion = async(suggestion) => {
-            const headers = {
-                "X-Goog-Api-Key": props.googleMapKey,
-                "X-Goog-FieldMask": "viewport,location",
-            };
 
+            const headers = {
+                    "X-Goog-Api-Key": props.googleMapKey,
+                    "X-Goog-FieldMask": "viewport,location",
+                };
             fetch(`https://places.googleapis.com/v1/places/${suggestion.placeId}?fields=viewport,location`, {
                 headers: headers,
             })
@@ -350,7 +344,7 @@ export default {
                 search.value = '';
                 suggestions.value = [];
 
-                const position = new google.maps.LatLng(data.location.latitude, data.location.longitude);
+                const position = new google.maps.LatLng(data.location.latitude, data.location.longitude );
 
                 map.value.setCenter(position);
 
@@ -361,12 +355,12 @@ export default {
                     );
 
                     map.value.fitBounds(bounds);
-                } else {
+                }else{
                     map.value.setZoom(15);
                 }
             })
             .catch((error) => {
-                console.error("Error fetching autocomplete results:", error);
+            console.error("Error fetching autocomplete results:", error);
             })
         }
 
@@ -375,14 +369,17 @@ export default {
             serviceLocations.value = response.data.results;
         };
 
+
         const attachClickListener = (polygon) => {
             google.maps.event.addListener(polygon, 'click', () => {
                 if (selectedPolygon.value === polygon) return;
 
+                // Reset styles for all polygons
                 polygons.forEach((poly) => {
                     poly.setOptions({ fillColor: "#0000FF", editable: false });
                 });
 
+                // Highlight and select the clicked polygon
                 polygon.setOptions({ fillColor: "#00FF00", editable: true });
                 selectedPolygon.value = polygon;
             });
@@ -409,7 +406,9 @@ export default {
 
             google.maps.event.addListener(drawingManager.value, 'overlaycomplete', function(event) {
                 if (event.type === google.maps.drawing.OverlayType.POLYGON) {
+
                     polygons.push(event.overlay);
+
                     attachClickListener(event.overlay);
                 }
             });
@@ -422,6 +421,7 @@ export default {
             });
 
             props.existingZones.forEach((polygon) => {
+
                 new google.maps.Polygon({
                     paths: polygon,
                     fillColor: "#FF0000",
@@ -432,29 +432,29 @@ export default {
                     zIndex: 1,
                     map: map.value,
                 });
+
             })
 
             initializeDrawingManager();
         };
 
         const changeDrawingMode = (option) => {
-            if(drawingManager.value) {
+            if(drawingManager.value){
                 let mode = option == 'draw' ? google.maps.drawing.OverlayType.POLYGON : null;
                 drawingManager.value.setDrawingMode(mode);
             }
         }
 
         const removeSelectedPolygon = () => {
-            if(selectedPolygon.value) {
+            if(selectedPolygon.value){
                 const index = polygons.indexOf(selectedPolygon.value);
                 changeDrawingMode('grab');
                 if (index > -1) {
                     polygons[index].setMap(null);
-                    polygons.splice(index, 1);
+                    polygons.splice(index, 1);  // Remove from polygons array
                 }
             }
         }
-
         const removeAllPolygons = () => {
             polygons.forEach(polygon => {
                 polygon.setMap(null);
@@ -462,7 +462,6 @@ export default {
             });
             polygons = [];
         }
-
         const handleSubmit = async () => {
             const errors = validateForm();
             if (Object.keys(errors).length === 0) {
@@ -484,8 +483,6 @@ export default {
                         coordinates: JSON.stringify(coordinates)
                     };
 
-                    console.log('Form data being sent:', formData); // للتحقق من البيانات
-
                     const response = await axios.post('store', formData);
                     if (response.status === 201) {
                         successMessage.value = t('zone_created_successfully');
@@ -497,17 +494,17 @@ export default {
                 } catch (error) {
                     if (error.response && error.response.status === 403) {
                         alertMessage.value = error.response.data.alertMessage;
-                        setTimeout(() => {
+                        setTimeout(()=>{
                             router.get('/zones');
-                        }, 5000)
-                    } else if (error.response && error.response.status === 422) {
+                        },5000)
+                    }else if (error.response && error.response.status === 422) {
                         alertMessage.value = error.response.data.message;
                         form.errors = {
-                            coordinates: error.response.data.message,
+                            coordinates : error.response.data.message,
                         }
-                    } else {
+                    }else{
                         form.errors = {};
-                        alertMessage.value = t('failed_to_create_zone_catch');
+                        alertMessage.value =t('failed_to_create_zone_catch');
                         console.error(t('error_updating_zone'), error);
                     }
                 }
@@ -515,83 +512,46 @@ export default {
                 form.errors = errors;
             }
         };
-
         const setActiveTab = (tab) => {
-            activeTab.value = tab;
+        activeTab.value = tab;
         }
-
         onMounted(async () => {
-            if (Object.keys(languages).length == 0) {
-                await fetchData();
-            }
+        if (Object.keys(languages).length == 0) {
+            await fetchData();
+        }
         });
 
         const validateForm = () => {
+            const { service_location_id, unit } = form;
             const errors = {};
-
-            if (!form.unit) {
+            if (!unit) {
                 errors.unit = t('unit_is_required');
             } else {
                 delete errors.unit;
             }
-
-            if (!form.service_location_id) {
+            if (!service_location_id) {
                 errors.service_location_id = t('service_location_is_required');
-            } else {
+            }else{
                 delete errors.service_location_id;
             }
-
             if (polygons.length === 0) {
                 errors.coordinates = t('at_least_one_completed_polygon_is_required');
-            } else {
+            }else{
                 delete errors.coordinates;
             }
-
-            if (props.enable_maximum_distance_feature) {
-                if (!form.maximum_distance && form.maximum_distance !== 0) {
+            if(props.enable_maximum_distance_feature){
+                if (!maximum_distance) {
                     errors.maximum_distance = t('required');
                 } else {
                     delete errors.maximum_distance;
                 }
-                if (!form.maximum_outstation_distance && form.maximum_outstation_distance !== 0) {
+                if (!maximum_outstation_distance) {
                     errors.maximum_outstation_distance = t('required');
-                } else {
+                }else{
                     delete errors.maximum_outstation_distance;
                 }
             }
 
-            // ✅ التحقق من حقول Peak Zone
-            if (enable_peak_zone_feature.value) {
-                if (form.peak_zone_ride_count === '' || form.peak_zone_ride_count === null || form.peak_zone_ride_count === undefined) {
-                    errors.peak_zone_ride_count = t('required');
-                } else {
-                    delete errors.peak_zone_ride_count;
-                }
-
-                if (form.peak_zone_radius === '' || form.peak_zone_radius === null || form.peak_zone_radius === undefined) {
-                    errors.peak_zone_radius = t('required');
-                } else {
-                    delete errors.peak_zone_radius;
-                }
-
-                if (form.peak_zone_history_duration === '' || form.peak_zone_history_duration === null || form.peak_zone_history_duration === undefined) {
-                    errors.peak_zone_history_duration = t('required');
-                } else {
-                    delete errors.peak_zone_history_duration;
-                }
-
-                if (form.peak_zone_duration === '' || form.peak_zone_duration === null || form.peak_zone_duration === undefined) {
-                    errors.peak_zone_duration = t('required');
-                } else {
-                    delete errors.peak_zone_duration;
-                }
-
-                if (form.distance_price_percentage === '' || form.distance_price_percentage === null || form.distance_price_percentage === undefined) {
-                    errors.distance_price_percentage = t('required');
-                } else {
-                    delete errors.distance_price_percentage;
-                }
-            }
 
             return errors;
         };
@@ -602,6 +562,7 @@ export default {
                 return;
             }
 
+            // Load Google Maps API script dynamically
             const script = document.createElement('script');
             script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapKey}&libraries=places,drawing`;
             script.onload = () => {
@@ -609,8 +570,8 @@ export default {
                 fetchServiceLocations();
             };
             document.head.appendChild(script);
-        });
 
+        });
         return {
             form,
             successMessage,
@@ -631,12 +592,12 @@ export default {
         };
     },
     computed: {
-        selectedUnitLabel() {
-            if (this.form.unit == 1) return this.$t("kilo_meter")
-            if (this.form.unit == 2) return this.$t("miles")
-            return ""
-        }
-    },
+    selectedUnitLabel() {
+        if (this.form.unit == 1) return this.$t("kilo_meter")
+        if (this.form.unit == 2) return this.$t("miles")
+        return ""
+    }
+},
 };
 </script>
 
