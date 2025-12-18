@@ -127,13 +127,19 @@ class ZoneController extends Controller
         }
 
         $validated = $request->validate(['languageFields' => 'required|array']);
-        $created_params = $request->only([
-            'service_location_id','unit','maximum_outstation_distance','maximum_distance',
-            'peak_zone_radius','peak_zone_duration','peak_zone_history_duration',
-            'peak_zone_ride_count','distance_price_percentage'
-        ]);
 
-        $created_params['unit'] = (int) $request->unit;
+        // Get all params and convert to proper types
+        $created_params = [
+            'service_location_id' => $request->service_location_id,
+            'unit' => (int) $request->unit,
+            'maximum_outstation_distance' => $request->has('maximum_outstation_distance') ? (float) $request->maximum_outstation_distance : 0,
+            'maximum_distance' => $request->has('maximum_distance') ? (float) $request->maximum_distance : 0,
+            'peak_zone_radius' => $request->has('peak_zone_radius') ? (float) $request->peak_zone_radius : 0,
+            'peak_zone_duration' => $request->has('peak_zone_duration') ? (int) $request->peak_zone_duration : 0,
+            'peak_zone_history_duration' => $request->has('peak_zone_history_duration') ? (int) $request->peak_zone_history_duration : 0,
+            'peak_zone_ride_count' => $request->has('peak_zone_ride_count') ? (int) $request->peak_zone_ride_count : 0,
+            'distance_price_percentage' => $request->has('distance_price_percentage') ? (float) $request->distance_price_percentage : 0,
+        ];
 
         if (!$request->coordinates) {
             throw ValidationException::withMessages(['name' => __('Please Complete the shape before submit')]);
@@ -197,18 +203,18 @@ class ZoneController extends Controller
 
         // Create zone using raw SQL for coordinates
         $zone = new Zone();
-        $zone->service_location_id = $created_params['service_location_id'] ?? null;
+        $zone->service_location_id = $created_params['service_location_id'];
         $zone->unit = $created_params['unit'];
         $zone->lat = $created_params['lat'];
         $zone->lng = $created_params['lng'];
         $zone->name = $created_params['name'];
-        $zone->maximum_outstation_distance = $created_params['maximum_outstation_distance'] ?? 0;
-        $zone->maximum_distance = $created_params['maximum_distance'] ?? 0;
-        $zone->peak_zone_radius = $created_params['peak_zone_radius'] ?? 0;
-        $zone->peak_zone_duration = $created_params['peak_zone_duration'] ?? 0;
-        $zone->peak_zone_history_duration = $created_params['peak_zone_history_duration'] ?? 0;
-        $zone->peak_zone_ride_count = $created_params['peak_zone_ride_count'] ?? 0;
-        $zone->distance_price_percentage = $created_params['distance_price_percentage'] ?? 0;
+        $zone->maximum_outstation_distance = $created_params['maximum_outstation_distance'];
+        $zone->maximum_distance = $created_params['maximum_distance'];
+        $zone->peak_zone_radius = $created_params['peak_zone_radius'];
+        $zone->peak_zone_duration = $created_params['peak_zone_duration'];
+        $zone->peak_zone_history_duration = $created_params['peak_zone_history_duration'];
+        $zone->peak_zone_ride_count = $created_params['peak_zone_ride_count'];
+        $zone->distance_price_percentage = $created_params['distance_price_percentage'];
 
         // Set coordinates using raw SQL
         $zone->coordinates = DB::raw("ST_GeomFromText('$wkt')");
@@ -236,7 +242,7 @@ class ZoneController extends Controller
 
     public function edit($id)
     {
-        $zone = Zone::findOrFail($id);
+        $zone = Zone::with('serviceLocation')->findOrFail($id);
         $googleMapKey = get_map_settings('google_map_key');
         $settings = Setting::where('category', 'peak_zone_settings')->get()->pluck('value', 'name')->toArray();
 
@@ -317,6 +323,16 @@ class ZoneController extends Controller
         }
 
         $zone->coordinates_array = json_encode($zone_coordinates);
+
+        // Convert values to proper types to ensure they're not null
+        $zone->peak_zone_radius = (float) ($zone->peak_zone_radius ?? 0);
+        $zone->peak_zone_duration = (int) ($zone->peak_zone_duration ?? 0);
+        $zone->peak_zone_history_duration = (int) ($zone->peak_zone_history_duration ?? 0);
+        $zone->peak_zone_ride_count = (int) ($zone->peak_zone_ride_count ?? 0);
+        $zone->distance_price_percentage = (float) ($zone->distance_price_percentage ?? 0);
+        $zone->maximum_distance = (float) ($zone->maximum_distance ?? 0);
+        $zone->maximum_outstation_distance = (float) ($zone->maximum_outstation_distance ?? 0);
+
         unset($zone->coordinates); // Remove binary data
 
         $languageFields = [];
@@ -361,15 +377,16 @@ class ZoneController extends Controller
             'languageFields' => 'required|array',
         ]);
 
+        // Properly handle all numeric fields
         $updated_params = [
             'unit' => (int)$request->unit,
-            'maximum_distance' => (double)$request->maximum_distance ?? 0,
-            'maximum_outstation_distance' => (double)$request->maximum_outstation_distance ?? 0,
-            'peak_zone_radius' => (double)$request->peak_zone_radius ?? 0,
-            'peak_zone_ride_count' => (double)$request->peak_zone_ride_count ?? 0,
-            'distance_price_percentage' => (double)$request->distance_price_percentage ?? 0,
-            'peak_zone_duration' => (double)$request->peak_zone_duration ?? 0,
-            'peak_zone_history_duration' => (double)$request->peak_zone_history_duration ?? 0,
+            'maximum_distance' => $request->has('maximum_distance') ? (float)$request->maximum_distance : 0,
+            'maximum_outstation_distance' => $request->has('maximum_outstation_distance') ? (float)$request->maximum_outstation_distance : 0,
+            'peak_zone_radius' => $request->has('peak_zone_radius') ? (float)$request->peak_zone_radius : 0,
+            'peak_zone_ride_count' => $request->has('peak_zone_ride_count') ? (int)$request->peak_zone_ride_count : 0,
+            'distance_price_percentage' => $request->has('distance_price_percentage') ? (float)$request->distance_price_percentage : 0,
+            'peak_zone_duration' => $request->has('peak_zone_duration') ? (int)$request->peak_zone_duration : 0,
+            'peak_zone_history_duration' => $request->has('peak_zone_history_duration') ? (int)$request->peak_zone_history_duration : 0,
             'service_location_id' => $request->service_location_id
         ];
 
