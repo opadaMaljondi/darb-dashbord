@@ -18,12 +18,11 @@ use App\Models\Admin\Setting;
 
 class ZoneController extends Controller
 {
-    //
-
     public function index() {
         $settings = Setting::where('category', 'peak_zone_settings')->get()->pluck('value', 'name')->toArray();
         return inertia('pages/zone/index', ['app_for'=>env('APP_FOR'),'settings' => $settings]);
     }
+
     public function updateZoneFeature(Request $request)
     {
         $validated = $request->validate([
@@ -37,18 +36,20 @@ class ZoneController extends Controller
 
         return response()->json(['success' => true]);
     }
+
     public function fetch(QueryFilterContract $queryFilter)
     {
         $query = Zone::query();
 
         $results = $queryFilter->builder($query)->customFilter(new ZoneFilter)->paginate();
-    //   dd($results);
+
         return response()->json([
             'results' => $results->items(),
             'paginator' => $results,
         ]);
     }
-     public function create()
+
+    public function create()
     {
         $googleMapKey = get_map_settings('google_map_key');
         $settings = Setting::where('category', 'peak_zone_settings')->get()->pluck('value', 'name')->toArray();
@@ -61,17 +62,40 @@ class ZoneController extends Controller
             $multiPolygon = $zone->coordinates;
 
             if ($multiPolygon instanceof MultiPolygon) {
-                foreach ($multiPolygon->getPolygons() as $polygon) {
-                    foreach ($polygon->getLineStrings() as $lineString) {
-                        $polygonPoints = [];
-                        foreach ($lineString->getPoints() as $point) {
-                            $polygonPoints[] = [
-                                'lat' => $point->getLat(),
-                                'lng' => $point->getLng(),
-                            ];
+                try {
+                    // MultiPolygon is iterable, contains Polygons
+                    foreach ($multiPolygon as $polygon) {
+                        // Add type check
+                        if (!is_object($polygon)) {
+                            Log::warning("Invalid polygon data for zone {$zone->id}");
+                            continue;
                         }
-                        $existing_coordinates[] = $polygonPoints;
+
+                        // Polygon is iterable, contains LineStrings
+                        foreach ($polygon as $lineString) {
+                            if (!is_object($lineString)) {
+                                Log::warning("Invalid lineString data for zone {$zone->id}");
+                                continue;
+                            }
+
+                            $polygonPoints = [];
+                            // LineString is iterable, contains Points
+                            foreach ($lineString as $point) {
+                                if (!is_object($point)) {
+                                    continue;
+                                }
+                                $polygonPoints[] = [
+                                    'lat' => $point->latitude,
+                                    'lng' => $point->longitude
+                                ];
+                            }
+                            if (!empty($polygonPoints)) {
+                                $existing_coordinates[] = $polygonPoints;
+                            }
+                        }
                     }
+                } catch (\Exception $e) {
+                    Log::error("Error processing zone {$zone->id}: " . $e->getMessage());
                 }
             }
         }
@@ -122,6 +146,7 @@ class ZoneController extends Controller
 
         // Build WKT string manually for better control
         $polygonStrings = [];
+        $polygons = [];
 
         foreach ($decodedCoordinates as $coordinates) {
             $points = [];
@@ -153,7 +178,7 @@ class ZoneController extends Controller
 
             // Close the polygon by adding first point at the end
             if (count($points) > 0) {
-                $firstCoord = $decodedCoordinates[0][0];
+                $firstCoord = $coordinates[0];
                 $coordinateStrings[] = ((float)$firstCoord[0]) . " " . ((float)$firstCoord[1]);
                 array_push($points, $points[0]);
             }
@@ -189,6 +214,8 @@ class ZoneController extends Controller
         $zone->coordinates = DB::raw("ST_GeomFromText('$wkt')");
         $zone->save();
 
+        $translationData = [];
+        $translations_data = [];
         foreach ($validated['languageFields'] as $code => $language) {
             $translationData[] = ['name' => $language, 'locale' => $code, 'zone_id' => $zone->id];
             $translations_data[$code] = (object)['locale'=>$code,'name'=>$language];
@@ -206,7 +233,8 @@ class ZoneController extends Controller
         $results = get_user_locations(auth()->user());
         return response()->json(['results' => $results]);
     }
-  public function edit($id)
+
+    public function edit($id)
     {
         $zone = Zone::findOrFail($id);
         $googleMapKey = get_map_settings('google_map_key');
@@ -217,21 +245,42 @@ class ZoneController extends Controller
 
         foreach ($existingZones as $existingZone) {
             $multiPolygon = $existingZone->coordinates;
+
             if ($multiPolygon instanceof MultiPolygon) {
-                // MultiPolygon is iterable, contains Polygons
-                foreach ($multiPolygon as $polygon) {
-                    // Polygon is iterable, contains LineStrings
-                    foreach ($polygon as $lineString) {
-                        $polygonPoints = [];
-                        // LineString is iterable, contains Points
-                        foreach ($lineString as $point) {
-                            $polygonPoints[] = [
-                                'lat' => $point->latitude,
-                                'lng' => $point->longitude
-                            ];
+                try {
+                    // MultiPolygon is iterable, contains Polygons
+                    foreach ($multiPolygon as $polygon) {
+                        // Add type check
+                        if (!is_object($polygon)) {
+                            Log::warning("Invalid polygon data for zone {$existingZone->id}");
+                            continue;
                         }
-                        $existing_coordinates[] = $polygonPoints;
+
+                        // Polygon is iterable, contains LineStrings
+                        foreach ($polygon as $lineString) {
+                            if (!is_object($lineString)) {
+                                Log::warning("Invalid lineString data for zone {$existingZone->id}");
+                                continue;
+                            }
+
+                            $polygonPoints = [];
+                            // LineString is iterable, contains Points
+                            foreach ($lineString as $point) {
+                                if (!is_object($point)) {
+                                    continue;
+                                }
+                                $polygonPoints[] = [
+                                    'lat' => $point->latitude,
+                                    'lng' => $point->longitude
+                                ];
+                            }
+                            if (!empty($polygonPoints)) {
+                                $existing_coordinates[] = $polygonPoints;
+                            }
+                        }
                     }
+                } catch (\Exception $e) {
+                    Log::error("Error processing zone {$existingZone->id}: " . $e->getMessage());
                 }
             }
         }
@@ -239,23 +288,42 @@ class ZoneController extends Controller
         // Convert zone coordinates to array format
         $zone_coordinates = [];
         if ($zone->coordinates instanceof MultiPolygon) {
-            foreach ($zone->coordinates as $polygon) {
-                foreach ($polygon as $lineString) {
-                    $points = [];
-                    foreach ($lineString as $point) {
-                        $points[] = [$point->longitude, $point->latitude];
+            try {
+                foreach ($zone->coordinates as $polygon) {
+                    if (!is_object($polygon)) {
+                        continue;
                     }
-                    $zone_coordinates[] = $points;
+
+                    foreach ($polygon as $lineString) {
+                        if (!is_object($lineString)) {
+                            continue;
+                        }
+
+                        $points = [];
+                        foreach ($lineString as $point) {
+                            if (!is_object($point)) {
+                                continue;
+                            }
+                            $points[] = [$point->longitude, $point->latitude];
+                        }
+                        if (!empty($points)) {
+                            $zone_coordinates[] = $points;
+                        }
+                    }
                 }
+            } catch (\Exception $e) {
+                Log::error("Error processing zone coordinates for zone {$zone->id}: " . $e->getMessage());
             }
         }
+
         $zone->coordinates_array = json_encode($zone_coordinates);
         unset($zone->coordinates); // Remove binary data
 
+        $languageFields = [];
         foreach ($zone->zoneTranslationWords as $language) {
             $languageFields[$language->locale] = $language->name;
         }
-        $zone->languageFields = $languageFields ?? null;
+        $zone->languageFields = $languageFields;
 
         $map_type = get_map_settings('map_type');
 
@@ -346,7 +414,7 @@ class ZoneController extends Controller
             }
 
             if (count($points) > 0) {
-                $firstCoord = $decodedCoordinates[0][0];
+                $firstCoord = $coordinates[0];
                 $coordinateStrings[] = ((float)$firstCoord[0]) . " " . ((float)$firstCoord[1]);
                 array_push($points, $points[0]);
             }
@@ -382,6 +450,9 @@ class ZoneController extends Controller
             ->update(['coordinates' => DB::raw("ST_GeomFromText('$wkt')")]);
 
         $zone->zoneTranslationWords()->delete();
+
+        $translationData = [];
+        $translations_data = [];
         foreach ($validated['languageFields'] as $code => $language) {
             $translationData[] = ['name' => $language, 'locale' => $code, 'zone_id' => $zone->id];
             $translations_data[$code] = (object)['locale'=>$code,'name'=>$language];
@@ -393,8 +464,6 @@ class ZoneController extends Controller
 
         return response()->json(['zone' => $zone], 200);
     }
-
-
 
     public function destroy(Zone $zone)
     {
@@ -409,6 +478,7 @@ class ZoneController extends Controller
             'successMessage' => 'Zone deleted successfully',
         ]);
     }
+
     public function updateStatus(Request $request)
     {
         if(env('APP_FOR') == 'demo'){
@@ -416,39 +486,30 @@ class ZoneController extends Controller
                 'alertMessage' => 'You are not Authorized'
             ], 403);
         }
-        // dd($request->all());
+
         Zone::where('id', $request->id)->update(['active'=> $request->status]);
 
         return response()->json([
             'successMessage' => 'Zone status updated successfully',
         ]);
-
-
     }
+
     public function map($id)
     {
         $zone = Zone::findOrFail($id);
-        $googleMapKey = get_map_settings('google_map_key'); // Retrieve the Google Map API key
-    // dd($googleMapKey);
-        // Pass the zone data and Google Map API key to the Inertia view
-                // dd($requestData);
-                $map_type = get_map_settings('map_type');
+        $googleMapKey = get_map_settings('google_map_key');
 
-                if($map_type=="open_street_map")
-                {
+        $map_type = get_map_settings('map_type');
 
-                    return inertia('pages/zone/open-map', [
-                        'zone' => $zone,
-                    ]);
-                 }else{
-
-                    return inertia('pages/zone/map', [
-                        'zone' => $zone,
-                        'googleMapKey' => $googleMapKey, // Pass the Google Map API key to the Vue component
-                    ]);
-                 }
+        if($map_type=="open_street_map") {
+            return inertia('pages/zone/open-map', [
+                'zone' => $zone,
+            ]);
+        } else {
+            return inertia('pages/zone/map', [
+                'zone' => $zone,
+                'googleMapKey' => $googleMapKey,
+            ]);
+        }
     }
-
 }
-
-
