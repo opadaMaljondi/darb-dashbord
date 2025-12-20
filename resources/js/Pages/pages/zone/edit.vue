@@ -63,7 +63,7 @@ export default {
         const search = ref('');
         const suggestions = ref([]);
         const handleInput = () =>{
-            
+
             if (search.value.length < 3) {
                 suggestions.value = [];
                 }else{
@@ -117,7 +117,7 @@ export default {
                 suggestions.value = [];
 
                 const position = new google.maps.LatLng(data.location.latitude, data.location.longitude );
-                
+
                 map.setCenter(position);
 
                 if (data.viewport && data.viewport.high && data.viewport.low) {
@@ -125,7 +125,7 @@ export default {
                         new google.maps.LatLng(data.viewport.low.latitude, data.viewport.low.longitude),
                         new google.maps.LatLng(data.viewport.high.latitude, data.viewport.high.longitude),
                     );
-                    
+
                     map.fitBounds(bounds);
                 }else{
                     map.setZoom(15);
@@ -135,62 +135,100 @@ export default {
             console.error("Error fetching autocomplete results:", error);
             })
         }
-        const initializeMap = () => {
-            if (zone && zone.coordinates) {
-                map = new google.maps.Map(document.getElementById('map'), {
-                    center: { lat: 0, lng: 0 },
-                    zoom: 10,
-                });
+      const initializeMap = () => {
+    if (zone && zone.coordinates) {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: 0, lng: 0 },
+            zoom: 10,
+        });
 
-                props.existingZones.forEach((polygon) => {
+        // Render existing zones (other zones)
+        props.existingZones.forEach((polygon) => {
+            new google.maps.Polygon({
+                paths: polygon,
+                fillColor: "#FF0000",
+                fillOpacity: 0.5,
+                strokeWeight: 1,
+                clickable: false,
+                editable: false,
+                zIndex: 1,
+                map: map,
+            });
+        });
 
-                    new google.maps.Polygon({
-                        paths: polygon,
-                        fillColor: "#FF0000",
-                        fillOpacity: 0.5,
-                        strokeWeight: 1,
-                        clickable: false,
-                        editable: false,
-                        zIndex: 1,
-                        map: map,
-                    });
+        // Adjust map center and zoom to fit the polygon
+        const bounds = new google.maps.LatLngBounds();
 
-                })
+        // Ensure coordinates is an array
+        const coordinatesArray = Array.isArray(zone.coordinates)
+            ? zone.coordinates
+            : [];
 
-                // Adjust map center and zoom to fit the polygon
-                const bounds = new google.maps.LatLngBounds();
-                zone.coordinates.forEach((polygon) => {
+        // Check if we have valid coordinates
+        if (coordinatesArray.length === 0) {
+            console.warn('No coordinates found for this zone');
+            initializeDrawingManager();
+            return;
+        }
 
-                const polygonCoordinates = polygon[0].map(point => ({
-                    lat: point.coordinates[1], // Latitude
-                    lng: point.coordinates[0], // Longitude
-                }))
+        // Process each polygon in the zone
+        coordinatesArray.forEach((polygonPoints) => {
+            // Convert from [lng, lat] format to Google Maps format
+            const polygonCoordinates = polygonPoints.map(point => {
+                // Handle both array format [lng, lat] and object format {lng, lat}
+                if (Array.isArray(point)) {
+                    return {
+                        lng: point[0], // Longitude
+                        lat: point[1], // Latitude
+                    };
+                } else if (point.lng !== undefined && point.lat !== undefined) {
+                    return {
+                        lng: point.lng,
+                        lat: point.lat,
+                    };
+                } else {
+                    console.warn('Invalid point format:', point);
+                    return null;
+                }
+            }).filter(point => point !== null);
 
-
-                currentPolygon = new google.maps.Polygon({
-                    paths: polygonCoordinates,
-                    fillColor: "#0000FF",
-                    fillOpacity: 0.3,
-                    strokeWeight: 1,
-                    clickable: true,
-                    editable: false,
-                    zIndex: 1,
-                    map: map,
-                });
-                polygons.push(currentPolygon);
-                attachClickListener(currentPolygon);
-
-                currentPolygon.getPath().forEach(coord => bounds.extend(coord));
-                })
-
-
-                map.fitBounds(bounds);
-
-                initializeDrawingManager();
+            if (polygonCoordinates.length === 0) {
+                console.warn('No valid coordinates in polygon');
+                return;
             }
 
-        };
-        
+            // Create the polygon
+            currentPolygon = new google.maps.Polygon({
+                paths: polygonCoordinates,
+                fillColor: "#0000FF",
+                fillOpacity: 0.3,
+                strokeWeight: 1,
+                clickable: true,
+                editable: false,
+                zIndex: 1,
+                map: map,
+            });
+
+            polygons.push(currentPolygon);
+            attachClickListener(currentPolygon);
+
+            // Extend bounds to include all points
+            currentPolygon.getPath().forEach(coord => bounds.extend(coord));
+        });
+
+        // Fit map to bounds only if we have valid bounds
+        if (!bounds.isEmpty()) {
+            map.fitBounds(bounds);
+        } else {
+            // Fallback to default center if no valid bounds
+            map.setCenter({ lat: parseFloat(props.default_lat) || 0, lng: parseFloat(props.default_lng) || 0 });
+            map.setZoom(12);
+        }
+
+        initializeDrawingManager();
+    }
+};
+
         const attachClickListener = (polygon) => {
             google.maps.event.addListener(polygon, 'click', () => {
                 if (selectedPolygon.value === polygon) return;
@@ -269,7 +307,7 @@ export default {
 
             google.maps.event.addListener(drawingManager.value, 'overlaycomplete', function(event) {
                 if (event.type === google.maps.drawing.OverlayType.POLYGON) {
-                    
+
                     polygons.push(event.overlay);
 
                     attachClickListener(event.overlay);
@@ -401,7 +439,7 @@ export default {
                 fetchServiceLocations();
                 mapInitialized = true;
             }
-            
+
         });
 
         return {
@@ -506,7 +544,7 @@ export default {
                                         <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="number" :readonly="app_for === 'demo'" class="form-control" 
+                                        <input type="number" :readonly="app_for === 'demo'" class="form-control"
                                         :placeholder="$t('enter_peak_zone_ride_count')" id="peak_zone_ride_count"
                                         v-model="form.peak_zone_ride_count"/>
                                         <span v-if="form.errors.peak_zone_ride_count" class="text-danger">{{ form.errors.peak_zone_ride_count }}</span>
@@ -519,21 +557,21 @@ export default {
                                         <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                    <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_radius')" id="peak_zone_radius" 
+                                    <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_radius')" id="peak_zone_radius"
                                     v-model="form.peak_zone_radius"
                                     />
                                     <span v-if="form.errors.peak_zone_radius" class="text-danger">{{ form.errors.peak_zone_radius }}</span>
                                     </div>
                                 </div>
-                                </div> 
-                            </div> 
+                                </div>
+                            </div>
                             <div class="row" v-if="enable_peak_zone_feature">
                             <div class="col-sm-6">
                                 <div class="mb-3">
                                 <label for="peak_zone_history_duration" class="form-label">{{$t("peak_zone_history_duration")}}
                                     <span class="text-danger">*</span>
                                 </label>
-                                <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_history_duration')" id="peak_zone_history_duration" 
+                                <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_history_duration')" id="peak_zone_history_duration"
                                 v-model="form.peak_zone_history_duration"
                                 />
                                 <span v-if="form.errors.peak_zone_history_duration" class="text-danger">{{ form.errors.peak_zone_history_duration }}</span>
@@ -545,13 +583,13 @@ export default {
                                     <span class="text-danger">*</span>
                                     </label>
                                 <div class="input-group">
-                                <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_duration')" id="peak_zone_duration" 
+                                <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_peak_zone_duration')" id="peak_zone_duration"
                                 v-model="form.peak_zone_duration"
                                 />
                                 <span v-if="form.errors.peak_zone_duration" class="text-danger">{{ form.errors.peak_zone_duration }}</span>
                                 </div>
                             </div>
-                            </div> 
+                            </div>
                             <div class="row" v-if="enable_peak_zone_feature">
 
                             <div class="col-sm-6">
@@ -561,13 +599,13 @@ export default {
                                     <a href="" class="text-success" data-bs-toggle="modal" data-bs-target="#surge">{{$t("how_it_works")}}</a>
                                 </label>
                                 <div class="input-group">
-                                <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_distance_price_percentage')" id="distance_price_percentage" 
+                                <input type="number" :readonly="app_for === 'demo'" class="form-control" :placeholder="$t('enter_distance_price_percentage')" id="distance_price_percentage"
                                 v-model="form.distance_price_percentage"
                                 />
                                 <span v-if="form.errors.distance_price_percentage" class="text-danger">{{ form.errors.distance_price_percentage }}</span>
                                 </div>
                             </div>
-                            </div> 
+                            </div>
                             </div>
                             </div>
                             <div class="text-end">
