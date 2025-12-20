@@ -254,15 +254,12 @@ class ZoneController extends Controller
 
             if ($multiPolygon instanceof MultiPolygon) {
                 try {
-                    // MultiPolygon is iterable, contains Polygons
                     foreach ($multiPolygon as $polygon) {
-                        // Add type check
                         if (!is_object($polygon)) {
                             Log::warning("Invalid polygon data for zone {$existingZone->id}");
                             continue;
                         }
 
-                        // Polygon is iterable, contains LineStrings
                         foreach ($polygon as $lineString) {
                             if (!is_object($lineString)) {
                                 Log::warning("Invalid lineString data for zone {$existingZone->id}");
@@ -270,7 +267,6 @@ class ZoneController extends Controller
                             }
 
                             $polygonPoints = [];
-                            // LineString is iterable, contains Points
                             foreach ($lineString as $point) {
                                 if (!is_object($point)) {
                                     continue;
@@ -291,7 +287,7 @@ class ZoneController extends Controller
             }
         }
 
-        // Convert zone coordinates to array format
+        // Convert zone coordinates to array format for the map
         $zone_coordinates = [];
         if ($zone->coordinates instanceof MultiPolygon) {
             try {
@@ -310,6 +306,7 @@ class ZoneController extends Controller
                             if (!is_object($point)) {
                                 continue;
                             }
+                            // Store as [lng, lat] for consistency with how coordinates are sent
                             $points[] = [$point->longitude, $point->latitude];
                         }
                         if (!empty($points)) {
@@ -322,8 +319,6 @@ class ZoneController extends Controller
             }
         }
 
-        $zone->coordinates_array = json_encode($zone_coordinates);
-
         // Convert values to proper types to ensure they're not null
         $zone->peak_zone_radius = (float) ($zone->peak_zone_radius ?? 0);
         $zone->peak_zone_duration = (int) ($zone->peak_zone_duration ?? 0);
@@ -333,8 +328,10 @@ class ZoneController extends Controller
         $zone->maximum_distance = (float) ($zone->maximum_distance ?? 0);
         $zone->maximum_outstation_distance = (float) ($zone->maximum_outstation_distance ?? 0);
 
-        unset($zone->coordinates); // Remove binary data
+        // IMPORTANT: Replace coordinates with the array format instead of removing it
+        $zone->coordinates = $zone_coordinates;
 
+        // Prepare language fields
         $languageFields = [];
         foreach ($zone->zoneTranslationWords as $language) {
             $languageFields[$language->locale] = $language->name;
