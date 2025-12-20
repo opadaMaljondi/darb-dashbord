@@ -135,99 +135,61 @@ export default {
             console.error("Error fetching autocomplete results:", error);
             })
         }
-      const initializeMap = () => {
-    if (zone && zone.coordinates) {
-        map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: 0, lng: 0 },
-            zoom: 10,
-        });
+        const initializeMap = () => {
+            if (zone && zone.coordinates) {
+                map = new google.maps.Map(document.getElementById('map'), {
+                    center: { lat: 0, lng: 0 },
+                    zoom: 10,
+                });
 
-        // Render existing zones (other zones)
-        props.existingZones.forEach((polygon) => {
-            new google.maps.Polygon({
-                paths: polygon,
-                fillColor: "#FF0000",
-                fillOpacity: 0.5,
-                strokeWeight: 1,
-                clickable: false,
-                editable: false,
-                zIndex: 1,
-                map: map,
-            });
-        });
+                props.existingZones.forEach((polygon) => {
 
-        // Adjust map center and zoom to fit the polygon
-        const bounds = new google.maps.LatLngBounds();
+                    new google.maps.Polygon({
+                        paths: polygon,
+                        fillColor: "#FF0000",
+                        fillOpacity: 0.5,
+                        strokeWeight: 1,
+                        clickable: false,
+                        editable: false,
+                        zIndex: 1,
+                        map: map,
+                    });
 
-        // Ensure coordinates is an array
-        const coordinatesArray = Array.isArray(zone.coordinates)
-            ? zone.coordinates
-            : [];
+                })
 
-        // Check if we have valid coordinates
-        if (coordinatesArray.length === 0) {
-            console.warn('No coordinates found for this zone');
-            initializeDrawingManager();
-            return;
-        }
+                // Adjust map center and zoom to fit the polygon
+                const bounds = new google.maps.LatLngBounds();
+                zone.coordinates.forEach((polygon) => {
 
-        // Process each polygon in the zone
-        coordinatesArray.forEach((polygonPoints) => {
-            // Convert from [lng, lat] format to Google Maps format
-            const polygonCoordinates = polygonPoints.map(point => {
-                // Handle both array format [lng, lat] and object format {lng, lat}
-                if (Array.isArray(point)) {
-                    return {
-                        lng: point[0], // Longitude
-                        lat: point[1], // Latitude
-                    };
-                } else if (point.lng !== undefined && point.lat !== undefined) {
-                    return {
-                        lng: point.lng,
-                        lat: point.lat,
-                    };
-                } else {
-                    console.warn('Invalid point format:', point);
-                    return null;
-                }
-            }).filter(point => point !== null);
+                const polygonCoordinates = polygon[0].map(point => ({
+                    lat: point.coordinates[1], // Latitude
+                    lng: point.coordinates[0], // Longitude
+                }))
 
-            if (polygonCoordinates.length === 0) {
-                console.warn('No valid coordinates in polygon');
-                return;
+
+                currentPolygon = new google.maps.Polygon({
+                    paths: polygonCoordinates,
+                    fillColor: "#0000FF",
+                    fillOpacity: 0.3,
+                    strokeWeight: 1,
+                    clickable: true,
+                    editable: false,
+                    zIndex: 1,
+                    map: map,
+                });
+                polygons.push(currentPolygon);
+                attachClickListener(currentPolygon);
+
+                currentPolygon.getPath().forEach(coord => bounds.extend(coord));
+                })
+
+
+                map.fitBounds(bounds);
+
+                initializeDrawingManager();
             }
 
-            // Create the polygon
-            currentPolygon = new google.maps.Polygon({
-                paths: polygonCoordinates,
-                fillColor: "#0000FF",
-                fillOpacity: 0.3,
-                strokeWeight: 1,
-                clickable: true,
-                editable: false,
-                zIndex: 1,
-                map: map,
-            });
-
-            polygons.push(currentPolygon);
-            attachClickListener(currentPolygon);
-
-            // Extend bounds to include all points
-            currentPolygon.getPath().forEach(coord => bounds.extend(coord));
-        });
-
-        // Fit map to bounds only if we have valid bounds
-        if (!bounds.isEmpty()) {
-            map.fitBounds(bounds);
-        } else {
-            // Fallback to default center if no valid bounds
-            map.setCenter({ lat: parseFloat(props.default_lat) || 0, lng: parseFloat(props.default_lng) || 0 });
-            map.setZoom(12);
-        }
-
-        initializeDrawingManager();
-    }
-};
+        };
 
         const attachClickListener = (polygon) => {
             google.maps.event.addListener(polygon, 'click', () => {
