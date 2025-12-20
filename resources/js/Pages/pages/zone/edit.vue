@@ -136,63 +136,55 @@ export default {
             })
         }
         const initializeMap = () => {
-            if (zone) {
+            if (zone && zone.coordinates) {
                 map = new google.maps.Map(document.getElementById('map'), {
                     center: { lat: 0, lng: 0 },
                     zoom: 10,
                 });
 
-                // Draw existing zones (other zones that shouldn't overlap)
-                if (props.existingZones && Array.isArray(props.existingZones)) {
-                    props.existingZones.forEach((polygon) => {
-                        if (polygon && Array.isArray(polygon)) {
-                            new google.maps.Polygon({
-                                paths: polygon,
-                                fillColor: "#FF0000",
-                                fillOpacity: 0.5,
-                                strokeWeight: 1,
-                                clickable: false,
-                                editable: false,
-                                zIndex: 1,
-                                map: map,
-                            });
-                        }
+                props.existingZones.forEach((polygon) => {
+
+                    new google.maps.Polygon({
+                        paths: polygon,
+                        fillColor: "#FF0000",
+                        fillOpacity: 0.5,
+                        strokeWeight: 1,
+                        clickable: false,
+                        editable: false,
+                        zIndex: 1,
+                        map: map,
                     });
-                }
+
+                })
 
                 // Adjust map center and zoom to fit the polygon
                 const bounds = new google.maps.LatLngBounds();
+                zone.coordinates.forEach((polygon) => {
 
-                // Ensure coordinates is an array before iterating
-                if (zone.coordinates && Array.isArray(zone.coordinates) && zone.coordinates.length > 0) {
-                    zone.coordinates.forEach((polygon) => {
-                        if (polygon && Array.isArray(polygon) && polygon[0] && Array.isArray(polygon[0])) {
-                            const polygonCoordinates = polygon[0].map(point => ({
-                                lat: point.coordinates[1], // Latitude
-                                lng: point.coordinates[0], // Longitude
-                            }));
+                const polygonCoordinates = polygon[0].map(point => ({
+                    lat: point.coordinates[1], // Latitude
+                    lng: point.coordinates[0], // Longitude
+                }))
 
-                            currentPolygon = new google.maps.Polygon({
-                                paths: polygonCoordinates,
-                                fillColor: "#0000FF",
-                                fillOpacity: 0.3,
-                                strokeWeight: 1,
-                                clickable: true,
-                                editable: false,
-                                zIndex: 1,
-                                map: map,
-                            });
-                            polygons.push(currentPolygon);
-                            attachClickListener(currentPolygon);
 
-                            currentPolygon.getPath().forEach(coord => bounds.extend(coord));
-                        }
-                    });
+                currentPolygon = new google.maps.Polygon({
+                    paths: polygonCoordinates,
+                    fillColor: "#0000FF",
+                    fillOpacity: 0.3,
+                    strokeWeight: 1,
+                    clickable: true,
+                    editable: false,
+                    zIndex: 1,
+                    map: map,
+                });
+                polygons.push(currentPolygon);
+                attachClickListener(currentPolygon);
 
-                    if (polygons.length > 0) {
-                        map.fitBounds(bounds);
-                    }
-                }
+                currentPolygon.getPath().forEach(coord => bounds.extend(coord));
+                })
+
+
+                map.fitBounds(bounds);
 
                 initializeDrawingManager();
             }
