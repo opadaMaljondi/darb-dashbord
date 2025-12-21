@@ -160,73 +160,76 @@ export default {
                     });
                 }
 
-                // Adjust map center and zoom to fit the polygon
-                const bounds = new google.maps.LatLngBounds();
+                // Only process coordinates if they exist
+                if (zone.coordinates) {
+                    // Adjust map center and zoom to fit the polygon
+                    const bounds = new google.maps.LatLngBounds();
 
-                // Handle different coordinate formats
-                let coordinatesArray = [];
-                
-                // Check if coordinates is already an array
-                if (Array.isArray(zone.coordinates)) {
-                    coordinatesArray = zone.coordinates;
-                } 
-                // Check if coordinates is a GeoJSON-like object with coordinates property
-                else if (zone.coordinates && typeof zone.coordinates === 'object' && zone.coordinates.coordinates) {
-                    coordinatesArray = zone.coordinates.coordinates;
-                }
-                // Check if coordinates is a string that needs parsing
-                else if (typeof zone.coordinates === 'string') {
-                    try {
-                        const parsed = JSON.parse(zone.coordinates);
-                        coordinatesArray = Array.isArray(parsed) ? parsed : (parsed.coordinates || []);
-                    } catch (e) {
-                        console.error('Error parsing coordinates:', e);
-                        coordinatesArray = [];
+                    // Handle different coordinate formats
+                    let coordinatesArray = [];
+
+                    // Check if coordinates is already an array
+                    if (Array.isArray(zone.coordinates)) {
+                        coordinatesArray = zone.coordinates;
                     }
-                }
-                
-                // Only proceed if we have a valid array
-                if (Array.isArray(coordinatesArray) && coordinatesArray.length > 0) {
-                    coordinatesArray.forEach((polygon) => {
-                        // Ensure polygon is an array and has the expected structure
-                        if (Array.isArray(polygon) && polygon.length > 0 && Array.isArray(polygon[0])) {
-                            const polygonCoordinates = polygon[0].map(point => {
-                                // Handle different point formats
-                                if (point && point.coordinates && Array.isArray(point.coordinates)) {
-                                    return {
-                                        lat: point.coordinates[1], // Latitude
-                                        lng: point.coordinates[0], // Longitude
-                                    };
-                                } else if (Array.isArray(point) && point.length >= 2) {
-                                    return {
-                                        lat: point[1], // Latitude
-                                        lng: point[0], // Longitude
-                                    };
-                                }
-                                return null;
-                            }).filter(coord => coord !== null);
-
-                            if (polygonCoordinates.length > 0) {
-                                currentPolygon = new google.maps.Polygon({
-                                    paths: polygonCoordinates,
-                                    fillColor: "#0000FF",
-                                    fillOpacity: 0.3,
-                                    strokeWeight: 1,
-                                    clickable: true,
-                                    editable: false,
-                                    zIndex: 1,
-                                    map: map,
-                                });
-                                polygons.push(currentPolygon);
-                                attachClickListener(currentPolygon);
-
-                                currentPolygon.getPath().forEach(coord => bounds.extend(coord));
-                            }
+                    // Check if coordinates is a GeoJSON-like object with coordinates property
+                    else if (zone.coordinates && typeof zone.coordinates === 'object' && zone.coordinates.coordinates) {
+                        coordinatesArray = zone.coordinates.coordinates;
+                    }
+                    // Check if coordinates is a string that needs parsing
+                    else if (typeof zone.coordinates === 'string') {
+                        try {
+                            const parsed = JSON.parse(zone.coordinates);
+                            coordinatesArray = Array.isArray(parsed) ? parsed : (parsed.coordinates || []);
+                        } catch (e) {
+                            console.error('Error parsing coordinates:', e);
+                            coordinatesArray = [];
                         }
-                    });
+                    }
 
-                    if (polygons.length > 0) {
-                        map.fitBounds(bounds);
+                    // Only proceed if we have a valid array
+                    if (Array.isArray(coordinatesArray) && coordinatesArray.length > 0) {
+                        coordinatesArray.forEach((polygon) => {
+                            // Ensure polygon is an array and has the expected structure
+                            if (Array.isArray(polygon) && polygon.length > 0 && Array.isArray(polygon[0])) {
+                                const polygonCoordinates = polygon[0].map(point => {
+                                    // Handle different point formats
+                                    if (point && point.coordinates && Array.isArray(point.coordinates)) {
+                                        return {
+                                            lat: point.coordinates[1], // Latitude
+                                            lng: point.coordinates[0], // Longitude
+                                        };
+                                    } else if (Array.isArray(point) && point.length >= 2) {
+                                        return {
+                                            lat: point[1], // Latitude
+                                            lng: point[0], // Longitude
+                                        };
+                                    }
+                                    return null;
+                                }).filter(coord => coord !== null);
+
+                                if (polygonCoordinates.length > 0) {
+                                    currentPolygon = new google.maps.Polygon({
+                                        paths: polygonCoordinates,
+                                        fillColor: "#0000FF",
+                                        fillOpacity: 0.3,
+                                        strokeWeight: 1,
+                                        clickable: true,
+                                        editable: false,
+                                        zIndex: 1,
+                                        map: map,
+                                    });
+                                    polygons.push(currentPolygon);
+                                    attachClickListener(currentPolygon);
+
+                                    currentPolygon.getPath().forEach(coord => bounds.extend(coord));
+                                }
+                            }
+                        });
+
+                        if (polygons.length > 0) {
+                            map.fitBounds(bounds);
+                        }
                     }
                 }
 
