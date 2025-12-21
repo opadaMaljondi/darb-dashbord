@@ -51,7 +51,7 @@ export default {
         const search = ref('');
         const suggestions = ref([]);
         const handleInput = () =>{
-            
+
             if (search.value.length < 3) {
                 suggestions.value = [];
                 }else{
@@ -105,7 +105,7 @@ export default {
                 suggestions.value = [];
 
                 const position = new google.maps.LatLng(data.location.latitude, data.location.longitude );
-                
+
                 map.setCenter(position);
 
                 if (data.viewport && data.viewport.high && data.viewport.low) {
@@ -113,7 +113,7 @@ export default {
                         new google.maps.LatLng(data.viewport.low.latitude, data.viewport.low.longitude),
                         new google.maps.LatLng(data.viewport.high.latitude, data.viewport.high.longitude),
                     );
-                    
+
                     map.fitBounds(bounds);
                 }else{
                     map.setZoom(15);
@@ -163,7 +163,7 @@ export default {
             }
 
         };
-        
+
         const attachClickListener = (polygon) => {
             google.maps.event.addListener(polygon, 'click', () => {
                 if (selectedPolygon.value === polygon) return;
@@ -242,7 +242,7 @@ export default {
 
             google.maps.event.addListener(drawingManager.value, 'overlaycomplete', function(event) {
                 if (event.type === google.maps.drawing.OverlayType.POLYGON) {
-                    
+
                     polygons.push(event.overlay);
 
                     attachClickListener(event.overlay);
@@ -357,7 +357,7 @@ export default {
                 fetchServiceLocations();
                 mapInitialized = true;
             }
-            
+
         });
 
         return {
@@ -404,7 +404,7 @@ export default {
                                 <input type="text" class="form-control" :placeholder="`Enter Name`"
                                     :id="`name`" v-model="form.name"
                                     required >
-                            </div>                                          
+                            </div>
                             <div class="text-end">
                                 <button type="submit" class="btn btn-primary" :disabled="app_for === 'demo'">{{$t("update")}}</button>
                             </div>
