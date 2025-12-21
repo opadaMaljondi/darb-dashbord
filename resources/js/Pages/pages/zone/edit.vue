@@ -142,56 +142,7 @@ export default {
                     zoom: 10,
                 });
 
-                // Adjust map center and zoom to fit the polygon
-                const bounds = new google.maps.LatLngBounds();
-
-                // Ensure coordinates is an array before iterating - draw current zone polygons first
-                if (zone.coordinates && Array.isArray(zone.coordinates) && zone.coordinates.length > 0) {
-                    zone.coordinates.forEach((polygon, index) => {
-                        try {
-                            if (polygon && Array.isArray(polygon) && polygon.length > 0) {
-                                // Handle the structure: polygon[0] contains the array of points
-                                const pointsArray = polygon[0];
-                                if (pointsArray && Array.isArray(pointsArray) && pointsArray.length > 0) {
-                                    const polygonCoordinates = pointsArray.map(point => {
-                                        if (point && point.coordinates && Array.isArray(point.coordinates) && point.coordinates.length >= 2) {
-                                            return {
-                                                lat: point.coordinates[1], // Latitude
-                                                lng: point.coordinates[0], // Longitude
-                                            };
-                                        }
-                                        return null;
-                                    }).filter(coord => coord !== null); // Filter out any invalid coordinates
-
-                                    if (polygonCoordinates.length > 0) {
-                                        const newPolygon = new google.maps.Polygon({
-                                            paths: polygonCoordinates,
-                                            fillColor: "#FF0000", // Red color for the zone being edited
-                                            fillOpacity: 0.5,
-                                            strokeWeight: 1,
-                                            clickable: true,
-                                            editable: false,
-                                            zIndex: 10, // Higher zIndex to ensure it appears above existing zones
-                                            map: map,
-                                        });
-                                        polygons.push(newPolygon);
-                                        attachClickListener(newPolygon);
-
-                                        newPolygon.getPath().forEach(coord => bounds.extend(coord));
-                                    }
-                                }
-                            }
-                        } catch (error) {
-                            console.error(`Error processing polygon at index ${index}:`, error);
-                        }
-                    });
-
-                    if (polygons.length > 0) {
-                        map.fitBounds(bounds);
-                    }
-                }
-
-                // Draw existing zones (other zones that shouldn't overlap) - draw after current zone
+                // Draw existing zones (other zones that shouldn't overlap)
                 if (props.existingZones && Array.isArray(props.existingZones)) {
                     props.existingZones.forEach((polygon) => {
                         if (polygon && Array.isArray(polygon)) {
@@ -202,11 +153,45 @@ export default {
                                 strokeWeight: 1,
                                 clickable: false,
                                 editable: false,
-                                zIndex: 1, // Lower zIndex so current zone appears on top
+                                zIndex: 1,
                                 map: map,
                             });
                         }
                     });
+                }
+
+                // Adjust map center and zoom to fit the polygon
+                const bounds = new google.maps.LatLngBounds();
+
+                // Ensure coordinates is an array before iterating
+                if (zone.coordinates && Array.isArray(zone.coordinates) && zone.coordinates.length > 0) {
+                    zone.coordinates.forEach((polygon) => {
+                        if (polygon && Array.isArray(polygon) && polygon[0] && Array.isArray(polygon[0])) {
+                            const polygonCoordinates = polygon[0].map(point => ({
+                                lat: point.coordinates[1], // Latitude
+                                lng: point.coordinates[0], // Longitude
+                            }));
+
+                            currentPolygon = new google.maps.Polygon({
+                                paths: polygonCoordinates,
+                                fillColor: "#0000FF",
+                                fillOpacity: 0.3,
+                                strokeWeight: 1,
+                                clickable: true,
+                                editable: false,
+                                zIndex: 1,
+                                map: map,
+                            });
+                            polygons.push(currentPolygon);
+                            attachClickListener(currentPolygon);
+
+                            currentPolygon.getPath().forEach(coord => bounds.extend(coord));
+                        }
+                    });
+
+                    if (polygons.length > 0) {
+                        map.fitBounds(bounds);
+                    }
                 }
 
                 initializeDrawingManager();
@@ -218,9 +203,9 @@ export default {
             google.maps.event.addListener(polygon, 'click', () => {
                 if (selectedPolygon.value === polygon) return;
 
-                // Reset styles for all polygons - use red for unselected polygons from the current zone
+                // Reset styles for all polygons
                 polygons.forEach((poly) => {
-                    poly.setOptions({ fillColor: "#FF0000", editable: false });
+                    poly.setOptions({ fillColor: "#0000FF", editable: false });
                 });
 
                 // Highlight and select the clicked polygon
@@ -279,7 +264,7 @@ export default {
                 drawingMode: null,
                 drawingControl: false,
                 polygonOptions: {
-                    fillColor: "#FF0000", // Red color for new polygons (matching the current zone color)
+                    fillColor: "#0000FF",
                     fillOpacity: 0.5,
                     strokeWeight: 1,
                     clickable: true,
