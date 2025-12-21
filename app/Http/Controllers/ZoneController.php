@@ -254,12 +254,15 @@ class ZoneController extends Controller
 
             if ($multiPolygon instanceof MultiPolygon) {
                 try {
+                    // MultiPolygon is iterable, contains Polygons
                     foreach ($multiPolygon as $polygon) {
+                        // Add type check
                         if (!is_object($polygon)) {
                             Log::warning("Invalid polygon data for zone {$existingZone->id}");
                             continue;
                         }
 
+                        // Polygon is iterable, contains LineStrings
                         foreach ($polygon as $lineString) {
                             if (!is_object($lineString)) {
                                 Log::warning("Invalid lineString data for zone {$existingZone->id}");
@@ -267,6 +270,7 @@ class ZoneController extends Controller
                             }
 
                             $polygonPoints = [];
+                            // LineString is iterable, contains Points
                             foreach ($lineString as $point) {
                                 if (!is_object($point)) {
                                     continue;
@@ -287,9 +291,9 @@ class ZoneController extends Controller
             }
         }
 
-        // Convert zone coordinates to array format for the map
+        // Convert zone coordinates to array format for frontend
         $zone_coordinates = [];
-        if ($zone->coordinates instanceof MultiPolygon) {
+        if ($zone->coordinates && $zone->coordinates instanceof MultiPolygon) {
             try {
                 foreach ($zone->coordinates as $polygon) {
                     if (!is_object($polygon)) {
@@ -306,11 +310,14 @@ class ZoneController extends Controller
                             if (!is_object($point)) {
                                 continue;
                             }
-                            // Store as [lng, lat] for consistency with how coordinates are sent
-                            $points[] = [$point->longitude, $point->latitude];
+                            // Format to match frontend expectation: {coordinates: [lng, lat]}
+                            $points[] = [
+                                'coordinates' => [$point->longitude, $point->latitude]
+                            ];
                         }
                         if (!empty($points)) {
-                            $zone_coordinates[] = $points;
+                            // Wrap points array in another array to match frontend structure: polygon[0]
+                            $zone_coordinates[] = [$points];
                         }
                     }
                 }
@@ -328,21 +335,24 @@ class ZoneController extends Controller
         $zone->maximum_distance = (float) ($zone->maximum_distance ?? 0);
         $zone->maximum_outstation_distance = (float) ($zone->maximum_outstation_distance ?? 0);
 
-        // IMPORTANT: Replace coordinates with the array format instead of removing it
-        $zone->coordinates = $zone_coordinates;
-
-        // Prepare language fields
         $languageFields = [];
         foreach ($zone->zoneTranslationWords as $language) {
             $languageFields[$language->locale] = $language->name;
         }
-        $zone->languageFields = $languageFields;
+
+        // Hide the original coordinates attribute to prevent cast interference
+        $zone->makeHidden(['coordinates']);
+
+        // Convert zone to array and add formatted coordinates
+        $zoneArray = $zone->toArray();
+        $zoneArray['coordinates'] = $zone_coordinates; // Add formatted array
+        $zoneArray['languageFields'] = $languageFields; // Add language fields
 
         $map_type = get_map_settings('map_type');
 
         if($map_type=="open_street_map") {
             return inertia('pages/zone/open-edit',[
-                'zone' => $zone,
+                'zone' => $zoneArray,
                 'enable_maximum_distance_feature'=>get_settings('enable_maximum_distance_feature') == 1,
                 'default_lat'=>get_settings('default_latitude'),
                 'default_lng'=>get_settings('default_longitude'),
@@ -351,7 +361,7 @@ class ZoneController extends Controller
             ]);
         } else {
             return inertia('pages/zone/edit',[
-                'zone' => $zone,
+                'zone' => $zoneArray,
                 'enable_maximum_distance_feature'=>get_settings('enable_maximum_distance_feature') == 1,
                 'default_lat'=>get_settings('default_latitude'),
                 'default_lng'=>get_settings('default_longitude'),
@@ -513,15 +523,57 @@ class ZoneController extends Controller
         $zone = Zone::findOrFail($id);
         $googleMapKey = get_map_settings('google_map_key');
 
+        // Convert zone coordinates to array format for frontend
+        $zone_coordinates = [];
+        if ($zone->coordinates && $zone->coordinates instanceof MultiPolygon) {
+            try {
+                foreach ($zone->coordinates as $polygon) {
+                    if (!is_object($polygon)) {
+                        continue;
+                    }
+
+                    foreach ($polygon as $lineString) {
+                        if (!is_object($lineString)) {
+                            continue;
+                        }
+
+                        $points = [];
+                        foreach ($lineString as $point) {
+                            if (!is_object($point)) {
+                                continue;
+                            }
+                            // Format to match frontend expectation: {coordinates: [lng, lat]}
+                            $points[] = [
+                                'coordinates' => [$point->longitude, $point->latitude]
+                            ];
+                        }
+                        if (!empty($points)) {
+                            // Wrap points array in another array to match frontend structure: polygon[0]
+                            $zone_coordinates[] = [$points];
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error("Error processing zone coordinates for zone {$zone->id}: " . $e->getMessage());
+            }
+        }
+
+        // Hide the original coordinates attribute to prevent cast interference
+        $zone->makeHidden(['coordinates']);
+
+        // Convert zone to array and add formatted coordinates
+        $zoneArray = $zone->toArray();
+        $zoneArray['coordinates'] = $zone_coordinates; // Add formatted array
+
         $map_type = get_map_settings('map_type');
 
         if($map_type=="open_street_map") {
             return inertia('pages/zone/open-map', [
-                'zone' => $zone,
+                'zone' => $zoneArray,
             ]);
         } else {
             return inertia('pages/zone/map', [
-                'zone' => $zone,
+                'zone' => $zoneArray,
                 'googleMapKey' => $googleMapKey,
             ]);
         }
