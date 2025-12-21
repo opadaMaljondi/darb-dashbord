@@ -55,7 +55,7 @@ class AirportController extends BaseController
     public function index()
     {
         return inertia('airport/index', ['app_for'=>env('APP_FOR'),]);
-        
+
     }
 
     public function getAllAirports(QueryFilterContract $queryFilter)
@@ -166,7 +166,7 @@ class AirportController extends BaseController
 
                     $point = new Point($coordinate[1], $coordinate[0]); // Point(lat, lng)
 
-                    $check_if_exists = Airport::companyKey()->contains('coordinates', $point)->exists();
+                    $check_if_exists = Airport::companyKey()->whereContains('coordinates', $point)->exists();
                     if ($check_if_exists) {
                         throw ValidationException::withMessages(['airport_name' => __('Coordinates already exists with our exists airport')]);
                     }
@@ -201,7 +201,7 @@ class AirportController extends BaseController
         return response()->json(['airport' => $airport], 201);
     }
 
-    public function list() 
+    public function list()
     {
         $results = get_user_locations(auth()->user());
         return response()->json(['results' => $results]);
@@ -226,7 +226,7 @@ class AirportController extends BaseController
 
         // Prepare updated parameters
         $updated_params['service_location_id'] = $request->service_location_id;
-        
+
         $set = [];
 
         if ($request->coordinates == null) {
@@ -256,7 +256,7 @@ class AirportController extends BaseController
 
                     $point = new Point($coordinate[1], $coordinate[0]); // Point(lat, lng)
 
-                    $check_if_exists = Airport::companyKey()->contains('coordinates', $point)->where('id','!=',$airport->id)->exists();
+                    $check_if_exists = Airport::companyKey()->whereContains('coordinates', $point)->where('id','!=',$airport->id)->exists();
                     if ($check_if_exists) {
                         throw ValidationException::withMessages(['airport_name' => __('Coordinates already exists with our exists airport')]);
                     }
@@ -282,7 +282,7 @@ class AirportController extends BaseController
         // Update additional parameters
         $updated_params['name'] = $validated['name'];
         $updated_params['coordinates'] = $multi_polygon;
-        
+
         $airport->update($updated_params);
 
         // Return a response indicating success
@@ -306,11 +306,11 @@ class AirportController extends BaseController
                 'airport' => $airport,
             ]);
         }else{
-    
+
             return inertia('airport/map', [
                 'airport' => $airport,
                 'googleMapKey' => $googleMapKey, // Pass the Google Map API key to the Vue component
-            ]);         
+            ]);
         }
     }
 
