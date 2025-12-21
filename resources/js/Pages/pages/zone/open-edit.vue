@@ -79,34 +79,77 @@ export default {
                 map.addLayer(drawnItems);
 
 
-                props.existingZones.forEach((polygon) => {
-                    const currentPolygon = polygon.map((coordinates)=>[coordinates.lat,coordinates.lng])
+                if (props.existingZones && Array.isArray(props.existingZones)) {
+                    props.existingZones.forEach((polygon) => {
+                        if (polygon && Array.isArray(polygon)) {
+                            const currentPolygon = polygon.map((coordinates)=>[coordinates.lat,coordinates.lng])
 
-                    // 🔒 Add a non-editable and non-deletable polygon
-                    L.polygon(currentPolygon, {
-                        color: 'red',
-                        interactive: false // disables mouse events (edit/delete prevention)
-                    }).addTo(map);
-                });
+                            // 🔒 Add a non-editable and non-deletable polygon
+                            L.polygon(currentPolygon, {
+                                color: 'red',
+                                interactive: false // disables mouse events (edit/delete prevention)
+                            }).addTo(map);
+                        }
+                    });
+                }
 
-                zone.coordinates.forEach(polygon => {
-                   
-                const polygonCoordinates = polygon[0].map(point => [point.coordinates[1], point.coordinates[0]]);
+                // Handle different coordinate formats
+                let coordinatesArray = [];
+                
+                // Check if coordinates is already an array
+                if (Array.isArray(zone.coordinates)) {
+                    coordinatesArray = zone.coordinates;
+                } 
+                // Check if coordinates is a GeoJSON-like object with coordinates property
+                else if (zone.coordinates && typeof zone.coordinates === 'object' && zone.coordinates.coordinates) {
+                    coordinatesArray = zone.coordinates.coordinates;
+                }
+                // Check if coordinates is a string that needs parsing
+                else if (typeof zone.coordinates === 'string') {
+                    try {
+                        const parsed = JSON.parse(zone.coordinates);
+                        coordinatesArray = Array.isArray(parsed) ? parsed : (parsed.coordinates || []);
+                    } catch (e) {
+                        console.error('Error parsing coordinates:', e);
+                        coordinatesArray = [];
+                    }
+                }
+                
+                // Only proceed if we have a valid array
+                if (Array.isArray(coordinatesArray) && coordinatesArray.length > 0) {
+                    coordinatesArray.forEach(polygon => {
+                        // Ensure polygon is an array and has the expected structure
+                        if (Array.isArray(polygon) && polygon.length > 0 && Array.isArray(polygon[0])) {
+                            const polygonCoordinates = polygon[0].map(point => {
+                                // Handle different point formats
+                                if (point && point.coordinates && Array.isArray(point.coordinates)) {
+                                    return [point.coordinates[1], point.coordinates[0]];
+                                } else if (Array.isArray(point) && point.length >= 2) {
+                                    return [point[1], point[0]];
+                                }
+                                return null;
+                            }).filter(coord => coord !== null);
 
-                currentPolygon = L.polygon(polygonCoordinates, {
-                    color: 'blue',
-                    weight: 3,
-                    fillOpacity: 0.2,
-                }).addTo(drawnItems);
+                            if (polygonCoordinates.length > 0) {
+                                currentPolygon = L.polygon(polygonCoordinates, {
+                                    color: 'blue',
+                                    weight: 3,
+                                    fillOpacity: 0.2,
+                                }).addTo(drawnItems);
 
-                // Adjust map view to fit the polygon
-                bounds.extend(currentPolygon.getBounds());
+                                // Adjust map view to fit the polygon
+                                bounds.extend(currentPolygon.getBounds());
 
-                polygons.push(currentPolygon);
+                                polygons.push(currentPolygon);
+                            }
+                        }
+                    });
 
-                });
+                    if (polygons.length > 0) {
+                        map.fitBounds(bounds);
+                    }
+                }
 
-                map.fitBounds(bounds);
                 initializeDrawing(drawnItems);
             }
         };
